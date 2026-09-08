@@ -13,8 +13,8 @@ import (
 // run are the actual report.
 var errUpdateFailed = errors.New("update failed")
 
-var updateCmd = &cobra.Command{
-	Use:   "update",
+var checkCmd = &cobra.Command{
+	Use:   "check",
 	Short: "Updates the local cache for package data",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		names := config.SortedPackageNames()
@@ -52,5 +52,5 @@ var updateCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(updateCmd)
+	rootCmd.AddCommand(checkCmd)
 }
