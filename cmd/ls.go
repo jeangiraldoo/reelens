@@ -17,7 +17,7 @@ var lsCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		table := tablewriter.NewWriter(os.Stdout)
 
-		table.Header("Package", "Source", "Latest version", "Published Date", "Cached in")
+		table.Header("Package", "Latest version", "Published", "Last checked")
 
 		releases, err := providers.LoadReleaseCache()
 		if err != nil {
@@ -29,16 +29,13 @@ var lsCmd = &cobra.Command{
 		}
 
 		for _, packageName := range config.SortedPackageNames() {
-			pkg := config.Cfg.Packages[packageName]
-
 			release := releases[packageName]
 
 			row := []string{
 				packageName,
-				pkg.Provider.Type,
 				release.Version,
-				dateUtils.Humanize(release.PublishedDate),
-				dateUtils.Humanize(release.CachedAt),
+				dateUtils.HumanTimeSince(release.PublishedDate),
+				dateUtils.HumanTimeSince(release.CachedAt),
 			}
 			if err := table.Append(row); err != nil {
 				return fmt.Errorf("ls: building row for %q: %w", packageName, err)
