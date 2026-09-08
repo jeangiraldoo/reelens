@@ -8,13 +8,13 @@ import (
 	"reelens/providers"
 )
 
-// errUpdateFailed signals that at least one package failed to update. Its
+// errFetchFailed signals that at least one package failed to be fetched. Its
 // message is never displayed; the per-package failures printed during the
 // run are the actual report.
-var errUpdateFailed = errors.New("update failed")
+var errFetchFailed = errors.New("fetch failed")
 
-var updateCmd = &cobra.Command{
-	Use:   "update",
+var fetchCmd = &cobra.Command{
+	Use:   "fetch",
 	Short: "Updates the local cache for package data",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		names := config.SortedPackageNames()
@@ -27,17 +27,17 @@ var updateCmd = &cobra.Command{
 		for _, packageName := range names {
 			pkgConfig, ok := config.Cfg.Packages[packageName]
 			if !ok {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not update %s: not found in config\n", packageName)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: not found in config\n", packageName)
 				failed++
 				continue
 			}
 
 			err := providers.CacheRelease(packageName, pkgConfig)
 			if err != nil {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not update %s: %v\n", packageName, err)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: %v\n", packageName, err)
 				failed++
 			} else {
-				fmt.Println("Updated " + packageName)
+				fmt.Println("fetched " + packageName)
 			}
 		}
 
@@ -45,12 +45,12 @@ var updateCmd = &cobra.Command{
 			// Reasons were already reported per package; this error exists
 			// only to drive a nonzero exit code.
 			cmd.SilenceErrors = true
-			return errUpdateFailed
+			return errFetchFailed
 		}
 		return nil
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(updateCmd)
+	rootCmd.AddCommand(fetchCmd)
 }

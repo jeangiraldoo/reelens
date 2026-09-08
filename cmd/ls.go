@@ -17,7 +17,7 @@ var lsCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		table := tablewriter.NewWriter(os.Stdout)
 
-		table.Header("Package", "Latest version", "Published", "Last checked")
+		table.Header("Package", "Latest version", "Published", "Last fetched")
 
 		releases, err := providers.LoadReleaseCache()
 		if err != nil {
