@@ -13,7 +13,6 @@ import (
 
 var (
 	allFlag,
-	outdatedFlag,
 	notOutdatedFlag,
 	aheadFlag,
 	unknownFlag,
@@ -44,12 +43,6 @@ func filterPackages() ([]string, error) {
 	}
 
 	var filters []func(providers.ReleaseState) bool
-
-	if outdatedFlag {
-		filters = append(filters, func(status providers.ReleaseState) bool {
-			return status != providers.Outdated
-		})
-	}
 
 	if notOutdatedFlag {
 		filters = append(filters, func(status providers.ReleaseState) bool {
@@ -199,7 +192,6 @@ func longOutput(pkgs []string, releases map[string]providers.ReleaseCache) error
 func init() {
 	rootCmd.AddCommand(lsCmd)
 
-	lsCmd.Flags().BoolVarP(&outdatedFlag, "no-outdated", "o", false, "filter out outdated packages")
 	lsCmd.Flags().BoolVarP(&notOutdatedFlag, "not-outdated", "u", false, "filter for up-to-date packages")
 	lsCmd.Flags().BoolVar(&aheadFlag, "ahead", false, "filter for packages ahead of latest")
 	lsCmd.Flags().BoolVar(&unknownFlag, "unknown", false, "filter for packages without an installed version")
