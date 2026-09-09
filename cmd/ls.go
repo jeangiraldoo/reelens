@@ -17,7 +17,7 @@ var lsCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		table := tablewriter.NewWriter(os.Stdout)
 
-		table.Header("Package", "Latest version", "Published", "Last fetched")
+		table.Header("Package", "Latest version", "Installed version", "Outdated", "Published", "Last fetched")
 
 		releases, err := providers.LoadReleaseCache()
 		if err != nil {
@@ -31,9 +31,23 @@ var lsCmd = &cobra.Command{
 		for _, packageName := range config.SortedPackageNames() {
 			release := releases[packageName]
 
+			var outdated string
+			switch release.ResolveVersionStatus() {
+			case providers.Unknown:
+				outdated = "–"
+			case providers.Current:
+				outdated = "no"
+			case providers.Outdated:
+				outdated = "yes"
+			case providers.Ahead:
+				outdated = "ahead"
+			}
+
 			row := []string{
 				packageName,
 				release.Version,
+				release.InstalledVersion,
+				outdated,
 				dateUtils.HumanTimeSince(release.PublishedDate),
 				dateUtils.HumanTimeSince(release.CachedAt),
 			}

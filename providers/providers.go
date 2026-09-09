@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Masterminds/semver/v3"
 	"os"
 	"path/filepath"
 	"reelens/config"
@@ -21,7 +22,47 @@ type Release struct {
 type ReleaseCache struct {
 	Release
 
-	CachedAt string `json:"cachedAt"`
+	CachedAt         string `json:"cachedAt"`
+	InstalledVersion string `json:"installedVersion"`
+}
+
+// ReleaseState classifies where a package's installed version stands relative
+// to its latest known version.
+type ReleaseState int
+
+const (
+	Unknown ReleaseState = iota
+	Current
+	Outdated
+	Ahead
+)
+
+// ResolveVersionStatus compares the installed version against the latest known
+// version and classifies the outcome. Non-semver values fall back to plain
+// string equality, since their relative order cannot be determined.
+func (r ReleaseCache) ResolveVersionStatus() ReleaseState {
+	if r.InstalledVersion == "" {
+		return Unknown
+	}
+
+	latest, latestErr := semver.NewVersion(r.Version)
+	installed, installedErr := semver.NewVersion(r.InstalledVersion)
+
+	if latestErr != nil || installedErr != nil {
+		if r.InstalledVersion == r.Version {
+			return Current
+		}
+		return Outdated
+	}
+
+	switch installed.Compare(latest) {
+	case -1:
+		return Outdated
+	case 0:
+		return Current
+	default:
+		return Ahead
+	}
 }
 
 type Provider interface {
@@ -68,6 +109,26 @@ func Lookup(name string) (Provider, error) {
 	return p, err
 }
 
+func SetCachedReleaseInstalledVersion(pkgName, newVersion string) error {
+	cache, err := LoadReleaseCache()
+
+	if err != nil {
+		return err
+	}
+
+	cachePkgData, ok := cache[pkgName]
+
+	if !ok {
+		return errors.New("unknown package: " + pkgName)
+	}
+
+	cachePkgData.InstalledVersion = newVersion
+
+	cache[pkgName] = cachePkgData
+
+	return saveReleaseCache(cache)
+}
+
 func CacheRelease(packageName string, pkg config.Package) error {
 	provider, err := Lookup(pkg.Provider.Type)
 	if err != nil {
@@ -85,8 +146,9 @@ func CacheRelease(packageName string, pkg config.Package) error {
 	}
 
 	cache[packageName] = ReleaseCache{
-		Release:  release,
-		CachedAt: time.Now().Format(time.RFC3339),
+		Release:          release,
+		CachedAt:         time.Now().Format(time.RFC3339),
+		InstalledVersion: cache[packageName].InstalledVersion,
 	}
 
 	return saveReleaseCache(cache)
