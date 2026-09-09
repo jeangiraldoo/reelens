@@ -11,3 +11,13 @@ func Filter[T any](originalList []T, callback func(T) bool) []T {
 
 	return newList
 }
+
+func LongestString(list []string) (width int) {
+	for _, name := range list {
+		if len(name) > width {
+			width = len(name)
+		}
+	}
+
+	return
+}

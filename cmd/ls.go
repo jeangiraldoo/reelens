@@ -12,10 +12,19 @@ import (
 )
 
 var (
+	allFlag,
 	outdatedFlag,
 	notOutdatedFlag,
 	aheadFlag,
-	unknownFlag bool
+	unknownFlag,
+	longFlag bool
+)
+
+const (
+	outdatedLabel = "yes"
+	aheadLabel    = "ahead"
+	currentLabel  = "current"
+	unknownLabel  = "Unknown"
 )
 
 func filterPackages() ([]string, error) {
@@ -30,49 +39,58 @@ func filterPackages() ([]string, error) {
 
 	pkgs := config.SortedPackageNames()
 
-	if outdatedFlag {
-		pkgs = collections.Filter(pkgs, func(element string) bool {
-			pkgData := releases[element]
+	if allFlag {
+		return pkgs, nil
+	}
 
-			return pkgData.ResolveVersionStatus() == providers.Outdated
+	var filters []func(providers.ReleaseState) bool
+
+	if outdatedFlag {
+		filters = append(filters, func(status providers.ReleaseState) bool {
+			return status != providers.Outdated
 		})
 	}
 
 	if notOutdatedFlag {
-		pkgs = collections.Filter(pkgs, func(element string) bool {
-			pkgData := releases[element]
-
-			return pkgData.ResolveVersionStatus() == providers.Current
+		filters = append(filters, func(status providers.ReleaseState) bool {
+			return status == providers.Current
 		})
 	}
 
 	if aheadFlag {
-		pkgs = collections.Filter(pkgs, func(element string) bool {
-			pkgData := releases[element]
-
-			return pkgData.ResolveVersionStatus() == providers.Ahead
+		filters = append(filters, func(status providers.ReleaseState) bool {
+			return status == providers.Ahead
 		})
 	}
 
 	if unknownFlag {
-		pkgs = collections.Filter(pkgs, func(element string) bool {
-			pkgData := releases[element]
-
-			return pkgData.ResolveVersionStatus() == providers.Unknown
+		filters = append(filters, func(status providers.ReleaseState) bool {
+			return status == providers.Unknown
 		})
 	}
+
+	if len(filters) == 0 {
+		// Default to only outdated packages when no status filter was requested.
+		filters = append(filters, func(status providers.ReleaseState) bool {
+			return status == providers.Outdated
+		})
+	}
+
+	pkgs = collections.Filter(pkgs, func(element string) bool {
+		status := releases[element].ResolveVersionStatus()
+		for _, filter := range filters {
+			if filter(status) {
+				return true
+			}
+		}
+		return false
+	})
 
 	return pkgs, nil
 
 }
 
 func resolveOutdatedLabel(release providers.ReleaseCache) (label string) {
-	const (
-		outdatedLabel = "yes"
-		aheadLabel    = "ahead"
-		currentLabel  = "current"
-		unknownLabel  = "Unknown"
-	)
 
 	switch release.ResolveVersionStatus() {
 	case providers.Unknown:
@@ -93,9 +111,6 @@ var lsCmd = &cobra.Command{
 	Short: "Lists the packages being tracked",
 
 	RunE: func(cmd *cobra.Command, args []string) error {
-		table := tablewriter.NewWriter(os.Stdout)
-
-		table.Header("Package", "Latest version", "Installed version", "Outdated", "Published", "Last fetched")
 
 		releases, err := providers.LoadReleaseCache()
 		if err != nil {
@@ -112,35 +127,82 @@ var lsCmd = &cobra.Command{
 			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: filtering failed (%v)\n", err)
 		}
 
-		for _, packageName := range pkgs {
-			release := releases[packageName]
+		if len(pkgs) == 0 {
+			fmt.Println("no new versions available")
+			return nil
+		}
 
-			row := []string{
-				packageName,
-				release.Version,
-				release.InstalledVersion,
-				resolveOutdatedLabel(release),
-				dateUtils.HumanTimeSince(release.PublishedDate),
-				dateUtils.HumanTimeSince(release.CachedAt),
+		if longFlag {
+			if err = longOutput(pkgs, releases); err != nil {
+				return err
 			}
-			if err := table.Append(row); err != nil {
-				return fmt.Errorf("ls: building row for %q: %w", packageName, err)
+
+			return nil
+		}
+
+		nameWidth := collections.LongestString(pkgs)
+
+		versionWidth := 0
+		for _, packageName := range pkgs {
+			currentVersion := releases[packageName].InstalledVersion
+			if currentVersion == "" {
+				currentVersion = unknownLabel
+			}
+			if len(currentVersion) > versionWidth {
+				versionWidth = len(currentVersion)
 			}
 		}
 
-		if err := table.Render(); err != nil {
-			return fmt.Errorf("ls: rendering table: %w", err)
+		for _, packageName := range pkgs {
+			release := releases[packageName]
+			currentVersion := release.InstalledVersion
+
+			if currentVersion == "" {
+				currentVersion = unknownLabel
+			}
+
+			fmt.Printf("%-*s %-*s -> %s\n", nameWidth, packageName, versionWidth, currentVersion, release.Version)
 		}
 
 		return nil
 	},
 }
 
+func longOutput(pkgs []string, releases map[string]providers.ReleaseCache) error {
+	table := tablewriter.NewWriter(os.Stdout)
+
+	table.Header("Package", "Latest version", "Installed version", "Outdated", "Published", "Last fetched")
+
+	for _, packageName := range pkgs {
+		release := releases[packageName]
+
+		row := []string{
+			packageName,
+			release.Version,
+			release.InstalledVersion,
+			resolveOutdatedLabel(release),
+			dateUtils.HumanTimeSince(release.PublishedDate),
+			dateUtils.HumanTimeSince(release.CachedAt),
+		}
+		if err := table.Append(row); err != nil {
+			return fmt.Errorf("ls: building row for %q: %w", packageName, err)
+		}
+	}
+
+	if err := table.Render(); err != nil {
+		return fmt.Errorf("ls: rendering table: %w", err)
+	}
+
+	return nil
+}
+
 func init() {
 	rootCmd.AddCommand(lsCmd)
 
-	lsCmd.Flags().BoolVarP(&outdatedFlag, "outdated", "o", false, "filter for outdated packages")
+	lsCmd.Flags().BoolVarP(&outdatedFlag, "no-outdated", "o", false, "filter out outdated packages")
 	lsCmd.Flags().BoolVarP(&notOutdatedFlag, "not-outdated", "u", false, "filter for up-to-date packages")
 	lsCmd.Flags().BoolVar(&aheadFlag, "ahead", false, "filter for packages ahead of latest")
 	lsCmd.Flags().BoolVar(&unknownFlag, "unknown", false, "filter for packages without an installed version")
+	lsCmd.Flags().BoolVarP(&longFlag, "long", "l", false, "show detailed table output")
+	lsCmd.Flags().BoolVarP(&allFlag, "all", "a", false, "show all packages")
 }
