@@ -154,7 +154,7 @@ var lsCmd = &cobra.Command{
 				currentVersion = unknownLabel
 			}
 
-			fmt.Printf("%-*s %-*s -> %s\n", nameWidth, packageName, versionWidth, currentVersion, release.Version)
+			fmt.Printf("%-*s %-*s -> %s\n", nameWidth, packageName, versionWidth, currentVersion, release.LatestVersion)
 		}
 
 		return nil
@@ -171,11 +171,11 @@ func longOutput(pkgs []string, releases map[string]data.LocalPackageData) error 
 
 		row := []string{
 			packageName,
-			release.Version,
+			release.LatestVersion,
 			release.InstalledVersion,
 			resolveOutdatedLabel(release),
 			dateUtils.HumanTimeSince(release.PublishedDate),
-			dateUtils.HumanTimeSince(release.CachedAt),
+			dateUtils.HumanTimeSince(release.FetchedAt),
 		}
 		if err := table.Append(row); err != nil {
 			return fmt.Errorf("ls: building row for %q: %w", packageName, err)

@@ -32,14 +32,14 @@ const (
 )
 
 type Release struct {
-	Version       string `json:"version"`
+	LatestVersion string `json:"latestVersion"`
 	PublishedDate string `json:"publishedDate"`
 }
 
 type LocalPackageData struct {
 	Release
 
-	CachedAt         string `json:"cachedAt"`
+	FetchedAt        string `json:"fetchedAt"`
 	InstalledVersion string `json:"installedVersion"`
 }
 
@@ -71,11 +71,11 @@ func (r LocalPackageData) ResolveVersionStatus() ReleaseState {
 		return Unknown
 	}
 
-	latest, latestErr := semver.NewVersion(r.Version)
+	latest, latestErr := semver.NewVersion(r.LatestVersion)
 	installed, installedErr := semver.NewVersion(r.InstalledVersion)
 
 	if latestErr != nil || installedErr != nil {
-		if r.InstalledVersion == r.Version {
+		if r.InstalledVersion == r.LatestVersion {
 			return Current
 		}
 		return Outdated

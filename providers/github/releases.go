@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"reelens/data"
-	"strings"
 )
 
 type githubRelease struct {
@@ -105,7 +104,7 @@ func getReleaseFromTag(repo string) (data.Release, error) {
 	}
 
 	return data.Release{
-		Version:       latestTag.Name,
+		LatestVersion: latestTag.Name,
 		PublishedDate: commit.Commit.Committer.Date,
 	}, nil
 }
@@ -125,7 +124,7 @@ func getLatestFromRelease(repo string) (data.Release, error) {
 	}
 
 	return data.Release{
-		Version:       release.TagName,
+		LatestVersion: release.TagName,
 		PublishedDate: release.PublishedAt,
 	}, nil
 }
