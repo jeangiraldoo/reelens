@@ -36,14 +36,14 @@ type Release struct {
 	PublishedDate string `json:"publishedDate"`
 }
 
-type LocalPkgData struct {
+type LocalPkg struct {
 	Release
 
 	FetchedAt        string `json:"fetchedAt"`
 	InstalledVersion string `json:"installedVersion"`
 }
 
-type LocalPkgs = map[string]LocalPkgData
+type LocalPkgs = map[string]LocalPkg
 
 var PkgDataFilePath string
 
@@ -68,7 +68,7 @@ func Init() error {
 // ResolveVersionStatus compares the installed version against the latest known
 // version and classifies the outcome. Non-semver values fall back to plain
 // string equality, since their relative order cannot be determined.
-func (r LocalPkgData) ResolveVersionStatus() ReleaseState {
+func (r LocalPkg) ResolveVersionStatus() ReleaseState {
 	if r.InstalledVersion == "" {
 		return Unknown
 	}
@@ -93,8 +93,8 @@ func (r LocalPkgData) ResolveVersionStatus() ReleaseState {
 	}
 }
 
-func SetCachedReleaseInstalledVersion(pkgName, newVersion string) error {
-	cache, err := LoadReleaseCache()
+func SetInstalledVersion(pkgName, newVersion string) error {
+	cache, err := LoadPkgs()
 
 	if err != nil {
 		return err
@@ -113,27 +113,27 @@ func SetCachedReleaseInstalledVersion(pkgName, newVersion string) error {
 	return SaveReleaseCache(cache)
 }
 
-func LoadReleaseCache() (LocalPkgs, error) {
-	cache := make(LocalPkgs)
+func LoadPkgs() (LocalPkgs, error) {
+	pkgsData := make(LocalPkgs)
 
 	data, err := os.ReadFile(PkgDataFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return cache, nil
+			return pkgsData, nil
 		}
 		return nil, fmt.Errorf("cannot read the release cache: %w", err)
 	}
 
 	// An empty file is equivalent to an empty cache.
 	if len(bytes.TrimSpace(data)) == 0 {
-		return cache, nil
+		return pkgsData, nil
 	}
 
-	if err := json.Unmarshal(data, &cache); err != nil {
+	if err := json.Unmarshal(data, &pkgsData); err != nil {
 		return nil, fmt.Errorf("cannot parse the release cache: %w", err)
 	}
 
-	return cache, nil
+	return pkgsData, nil
 }
 
 // Persists the cache atomically: content is written to a temporary file
