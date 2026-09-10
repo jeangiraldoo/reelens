@@ -161,21 +161,21 @@ var lsCmd = &cobra.Command{
 	},
 }
 
-func longOutput(pkgs []string, releases map[string]data.LocalPkgData) error {
+func longOutput(pkgs []string, localPkgsData data.LocalPkgs) error {
 	table := tablewriter.NewWriter(os.Stdout)
 
 	table.Header("Package", "Latest version", "Installed version", "Outdated", "Published", "Last fetched")
 
 	for _, pkgName := range pkgs {
-		release := releases[pkgName]
+		localPkgData := localPkgsData[pkgName]
 
 		row := []string{
 			pkgName,
-			release.LatestVersion,
-			release.InstalledVersion,
-			resolveOutdatedLabel(release),
-			dateUtils.HumanTimeSince(release.PublishedDate),
-			dateUtils.HumanTimeSince(release.FetchedAt),
+			localPkgData.LatestVersion,
+			localPkgData.InstalledVersion,
+			resolveOutdatedLabel(localPkgData),
+			dateUtils.HumanTimeSince(localPkgData.PublishedDate),
+			dateUtils.HumanTimeSince(localPkgData.FetchedAt),
 		}
 		if err := table.Append(row); err != nil {
 			return fmt.Errorf("ls: building row for %q: %w", pkgName, err)
