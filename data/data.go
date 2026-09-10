@@ -33,7 +33,6 @@ const (
 
 type Release struct {
 	Version       string `json:"version"`
-	Name          string `json:"name"`
 	PublishedDate string `json:"publishedDate"`
 }
 

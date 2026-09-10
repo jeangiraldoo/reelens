@@ -106,7 +106,6 @@ func getReleaseFromTag(repo string) (data.Release, error) {
 
 	return data.Release{
 		Version:       latestTag.Name,
-		Name:          strings.Split(commit.Commit.Message, "\n")[0],
 		PublishedDate: commit.Commit.Committer.Date,
 	}, nil
 }
@@ -127,7 +126,6 @@ func getLatestFromRelease(repo string) (data.Release, error) {
 
 	return data.Release{
 		Version:       release.TagName,
-		Name:          release.Name,
 		PublishedDate: release.PublishedAt,
 	}, nil
 }
