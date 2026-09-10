@@ -1,4 +1,4 @@
-package pathUtils
+package system
 
 import (
 	"os"

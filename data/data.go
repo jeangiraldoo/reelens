@@ -8,7 +8,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"os"
 	"path/filepath"
-	"reelens/utils/paths"
+	"reelens/utils/system"
 )
 
 const (
@@ -51,7 +51,7 @@ var PkgDataFilePath string
 // cache paths. It must be called before any command reads or writes the
 // cache.
 func Init() error {
-	base, err := pathUtils.UserStateDir()
+	base, err := system.UserStateDir()
 
 	if err != nil {
 		return err
