@@ -27,7 +27,7 @@ const (
 )
 
 func filterPkgs() ([]string, error) {
-	releases, err := data.LoadReleaseCache()
+	pkgsData, err := data.LoadPkgs()
 	if err != nil {
 		// Degrade rather than fail: still list tracked packages, minus
 		// cached columns. releases is nil here — safe to read, every
@@ -70,7 +70,7 @@ func filterPkgs() ([]string, error) {
 	}
 
 	pkgs = collections.Filter(pkgs, func(element string) bool {
-		status := releases[element].ResolveVersionStatus()
+		status := pkgsData[element].ResolveVersionStatus()
 		for _, filter := range filters {
 			if filter(status) {
 				return true
@@ -83,7 +83,7 @@ func filterPkgs() ([]string, error) {
 
 }
 
-func resolveOutdatedLabel(release data.LocalPkgData) (label string) {
+func resolveOutdatedLabel(release data.LocalPkg) (label string) {
 
 	switch release.ResolveVersionStatus() {
 	case data.Unknown:
@@ -105,7 +105,7 @@ var lsCmd = &cobra.Command{
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		releases, err := data.LoadReleaseCache()
+		pkgsData, err := data.LoadPkgs()
 		if err != nil {
 			// Degrade rather than fail: still list tracked packages, minus
 			// cached columns. releases is nil here — safe to read, every
@@ -126,7 +126,7 @@ var lsCmd = &cobra.Command{
 		}
 
 		if longFlag {
-			if err = longOutput(pkgs, releases); err != nil {
+			if err = longOutput(pkgs, pkgsData); err != nil {
 				return err
 			}
 
@@ -137,7 +137,7 @@ var lsCmd = &cobra.Command{
 
 		versionWidth := 0
 		for _, pkgName := range pkgs {
-			currentVersion := releases[pkgName].InstalledVersion
+			currentVersion := pkgsData[pkgName].InstalledVersion
 			if currentVersion == "" {
 				currentVersion = unknownLabel
 			}
@@ -147,7 +147,7 @@ var lsCmd = &cobra.Command{
 		}
 
 		for _, pkgName := range pkgs {
-			release := releases[pkgName]
+			release := pkgsData[pkgName]
 			currentVersion := release.InstalledVersion
 
 			if currentVersion == "" {

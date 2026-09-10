@@ -20,7 +20,7 @@ Example:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		pkgName, version := args[0], args[1]
 
-		err := data.SetCachedReleaseInstalledVersion(pkgName, version)
+		err := data.SetInstalledVersion(pkgName, version)
 		if err != nil {
 			return fmt.Errorf("could not set %s: %w", pkgName, err)
 		}
