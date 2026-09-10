@@ -3,6 +3,7 @@ package github
 import (
 	"fmt"
 	"reelens/config"
+	"reelens/data"
 	"reelens/providers"
 )
 
@@ -17,10 +18,10 @@ func init() {
 	providers.Register("github", githubProvider{})
 }
 
-func (githubProvider) GetLatestRelease(pkgName string, pkgConfig config.Package) (release providers.Release, err error) {
+func (githubProvider) GetLatestRelease(pkgName string, pkgConfig config.Package) (release data.Release, err error) {
 	githubConfig, err := providers.DecodeProviderConfig[githubConfig](pkgConfig)
 	if err != nil {
-		return providers.Release{}, err
+		return data.Release{}, err
 	}
 
 	switch pkgConfig.Version {
@@ -29,11 +30,11 @@ func (githubProvider) GetLatestRelease(pkgName string, pkgConfig config.Package)
 	case "release":
 		release, err = getLatestFromRelease(githubConfig.RepoID)
 	default:
-		release, err = providers.Release{}, fmt.Errorf("unknown version source: %s", pkgConfig.Version)
+		release, err = data.Release{}, fmt.Errorf("unknown version source: %s", pkgConfig.Version)
 	}
 
 	if err != nil {
-		return providers.Release{}, err
+		return data.Release{}, err
 	}
 
 	// The timestamp travels exactly as GitHub sent it (RFC3339); formatting

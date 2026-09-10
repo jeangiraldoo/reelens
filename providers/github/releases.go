@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
-	"reelens/providers"
+	"reelens/data"
 	"strings"
 )
 
@@ -34,7 +34,7 @@ type githubCommit struct {
 // shorter response marks the final page.
 const tagsPerPage = 100
 
-func getReleaseFromTag(repo string) (providers.Release, error) {
+func getReleaseFromTag(repo string) (data.Release, error) {
 	var latestTag githubTag
 	var latestVersion *semver.Version
 
@@ -44,7 +44,7 @@ func getReleaseFromTag(repo string) (providers.Release, error) {
 		resp, err := getRequest(repo, endpoint)
 
 		if err != nil {
-			return providers.Release{}, err
+			return data.Release{}, err
 		}
 
 		var tags []githubTag
@@ -53,7 +53,7 @@ func getReleaseFromTag(repo string) (providers.Release, error) {
 		_ = resp.Body.Close()
 
 		if err != nil {
-			return providers.Release{}, err
+			return data.Release{}, err
 		}
 
 		// No more pages.
@@ -85,7 +85,7 @@ func getReleaseFromTag(repo string) (providers.Release, error) {
 	}
 
 	if latestVersion == nil {
-		return providers.Release{}, fmt.Errorf(
+		return data.Release{}, fmt.Errorf(
 			"repository has no stable semantic version tags",
 		)
 	}
@@ -93,7 +93,7 @@ func getReleaseFromTag(repo string) (providers.Release, error) {
 	resp, err := getRequest(repo, "commits/"+latestTag.Commit.SHA)
 
 	if err != nil {
-		return providers.Release{}, err
+		return data.Release{}, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -101,20 +101,20 @@ func getReleaseFromTag(repo string) (providers.Release, error) {
 
 	err = json.NewDecoder(resp.Body).Decode(&commit)
 	if err != nil {
-		return providers.Release{}, err
+		return data.Release{}, err
 	}
 
-	return providers.Release{
+	return data.Release{
 		Version:       latestTag.Name,
 		Name:          strings.Split(commit.Commit.Message, "\n")[0],
 		PublishedDate: commit.Commit.Committer.Date,
 	}, nil
 }
 
-func getLatestFromRelease(repo string) (providers.Release, error) {
+func getLatestFromRelease(repo string) (data.Release, error) {
 	resp, err := getRequest(repo, "releases/latest")
 	if err != nil {
-		return providers.Release{}, err
+		return data.Release{}, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -122,10 +122,10 @@ func getLatestFromRelease(repo string) (providers.Release, error) {
 
 	err = json.NewDecoder(resp.Body).Decode(&release)
 	if err != nil {
-		return providers.Release{}, err
+		return data.Release{}, err
 	}
 
-	return providers.Release{
+	return data.Release{
 		Version:       release.TagName,
 		Name:          release.Name,
 		PublishedDate: release.PublishedAt,

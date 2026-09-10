@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"reelens/providers"
+	"reelens/data"
 )
 
 const expectedArgs = 2 // <package name> <version>
@@ -20,7 +20,7 @@ Example:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		pkgName, version := args[0], args[1]
 
-		err := providers.SetCachedReleaseInstalledVersion(pkgName, version)
+		err := data.SetCachedReleaseInstalledVersion(pkgName, version)
 		if err != nil {
 			return fmt.Errorf("could not set %s: %w", pkgName, err)
 		}
