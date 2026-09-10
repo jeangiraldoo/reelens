@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"reelens/config"
-	"reelens/providers"
+	"reelens/data"
 	"reelens/utils/collections"
 	"reelens/utils/dates"
 )
@@ -27,7 +27,7 @@ const (
 )
 
 func filterPackages() ([]string, error) {
-	releases, err := providers.LoadReleaseCache()
+	releases, err := data.LoadReleaseCache()
 	if err != nil {
 		// Degrade rather than fail: still list tracked packages, minus
 		// cached columns. releases is nil here — safe to read, every
@@ -42,30 +42,30 @@ func filterPackages() ([]string, error) {
 		return pkgs, nil
 	}
 
-	var filters []func(providers.ReleaseState) bool
+	var filters []func(data.ReleaseState) bool
 
 	if notOutdatedFlag {
-		filters = append(filters, func(status providers.ReleaseState) bool {
-			return status == providers.Current
+		filters = append(filters, func(status data.ReleaseState) bool {
+			return status == data.Current
 		})
 	}
 
 	if aheadFlag {
-		filters = append(filters, func(status providers.ReleaseState) bool {
-			return status == providers.Ahead
+		filters = append(filters, func(status data.ReleaseState) bool {
+			return status == data.Ahead
 		})
 	}
 
 	if unknownFlag {
-		filters = append(filters, func(status providers.ReleaseState) bool {
-			return status == providers.Unknown
+		filters = append(filters, func(status data.ReleaseState) bool {
+			return status == data.Unknown
 		})
 	}
 
 	if len(filters) == 0 {
 		// Default to only outdated packages when no status filter was requested.
-		filters = append(filters, func(status providers.ReleaseState) bool {
-			return status == providers.Outdated
+		filters = append(filters, func(status data.ReleaseState) bool {
+			return status == data.Outdated
 		})
 	}
 
@@ -83,16 +83,16 @@ func filterPackages() ([]string, error) {
 
 }
 
-func resolveOutdatedLabel(release providers.ReleaseCache) (label string) {
+func resolveOutdatedLabel(release data.LocalPackageData) (label string) {
 
 	switch release.ResolveVersionStatus() {
-	case providers.Unknown:
+	case data.Unknown:
 		label = unknownLabel
-	case providers.Current:
+	case data.Current:
 		label = currentLabel
-	case providers.Outdated:
+	case data.Outdated:
 		label = outdatedLabel
-	case providers.Ahead:
+	case data.Ahead:
 		label = aheadLabel
 	}
 
@@ -105,7 +105,7 @@ var lsCmd = &cobra.Command{
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		releases, err := providers.LoadReleaseCache()
+		releases, err := data.LoadReleaseCache()
 		if err != nil {
 			// Degrade rather than fail: still list tracked packages, minus
 			// cached columns. releases is nil here — safe to read, every
@@ -161,7 +161,7 @@ var lsCmd = &cobra.Command{
 	},
 }
 
-func longOutput(pkgs []string, releases map[string]providers.ReleaseCache) error {
+func longOutput(pkgs []string, releases map[string]data.LocalPackageData) error {
 	table := tablewriter.NewWriter(os.Stdout)
 
 	table.Header("Package", "Latest version", "Installed version", "Outdated", "Published", "Last fetched")

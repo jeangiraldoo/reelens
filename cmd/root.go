@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"reelens/config"
-	"reelens/providers"
+	"reelens/data"
 	_ "reelens/providers/all"
 )
 
@@ -19,7 +19,7 @@ var rootCmd = &cobra.Command{
 		if err := config.Load(); err != nil {
 			return err
 		}
-		return providers.Init()
+		return data.Init()
 	},
 }
 
