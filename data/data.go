@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	dirName          = "reelens"
-	packagesFileName = "packages.json"
+	dirName       = "reelens"
+	pkgDataFile   = "packages.json"
 )
 
 // ReleaseState classifies where a package's installed version stands relative
@@ -36,14 +36,14 @@ type Release struct {
 	PublishedDate string `json:"publishedDate"`
 }
 
-type LocalPackageData struct {
+type LocalPkgData struct {
 	Release
 
 	FetchedAt        string `json:"fetchedAt"`
 	InstalledVersion string `json:"installedVersion"`
 }
 
-var PackageDataFilePath string
+var PkgDataFilePath string
 
 // Init resolves the state directory, creates it if needed, and sets the
 // cache paths. It must be called before any command reads or writes the
@@ -56,7 +56,7 @@ func Init() error {
 	}
 
 	dataDirPath := filepath.Join(base, dirName)
-	PackageDataFilePath = filepath.Join(dataDirPath, packagesFileName)
+	PkgDataFilePath = filepath.Join(dataDirPath, pkgDataFile)
 
 	const cacheDirPerm = 0o755
 
@@ -66,7 +66,7 @@ func Init() error {
 // ResolveVersionStatus compares the installed version against the latest known
 // version and classifies the outcome. Non-semver values fall back to plain
 // string equality, since their relative order cannot be determined.
-func (r LocalPackageData) ResolveVersionStatus() ReleaseState {
+func (r LocalPkgData) ResolveVersionStatus() ReleaseState {
 	if r.InstalledVersion == "" {
 		return Unknown
 	}
@@ -111,10 +111,10 @@ func SetCachedReleaseInstalledVersion(pkgName, newVersion string) error {
 	return SaveReleaseCache(cache)
 }
 
-func LoadReleaseCache() (map[string]LocalPackageData, error) {
-	cache := make(map[string]LocalPackageData)
+func LoadReleaseCache() (map[string]LocalPkgData, error) {
+	cache := make(map[string]LocalPkgData)
 
-	data, err := os.ReadFile(PackageDataFilePath)
+	data, err := os.ReadFile(PkgDataFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return cache, nil
@@ -138,13 +138,13 @@ func LoadReleaseCache() (map[string]LocalPackageData, error) {
 // beside the real one, then renamed over it. Rename is only atomic within
 // one filesystem — hence the sibling placement — so readers always see
 // either the complete old file or the complete new one, never a torn mix.
-func SaveReleaseCache(cache map[string]LocalPackageData) error {
+func SaveReleaseCache(cache map[string]LocalPkgData) error {
 	data, err := json.MarshalIndent(cache, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	tmp, err := os.CreateTemp(filepath.Dir(PackageDataFilePath), "reelens-cache-*.json")
+	tmp, err := os.CreateTemp(filepath.Dir(PkgDataFilePath), "reelens-cache-*.json")
 	if err != nil {
 		return fmt.Errorf("cannot create temporary cache file: %w", err)
 	}
@@ -164,7 +164,7 @@ func SaveReleaseCache(cache map[string]LocalPackageData) error {
 		return fmt.Errorf("cannot set cache file permissions: %w", err)
 	}
 
-	if err := os.Rename(tmp.Name(), PackageDataFilePath); err != nil {
+	if err := os.Rename(tmp.Name(), PkgDataFilePath); err != nil {
 		return fmt.Errorf("cannot swap cache file into place: %w", err)
 	}
 
