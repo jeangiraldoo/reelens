@@ -48,7 +48,7 @@ func CacheRelease(packageName string, pkg config.Package) error {
 
 	cache[packageName] = data.LocalPackageData{
 		Release:          release,
-		CachedAt:         time.Now().Format(time.RFC3339),
+		FetchedAt:        time.Now().Format(time.RFC3339),
 		InstalledVersion: cache[packageName].InstalledVersion,
 	}
 
