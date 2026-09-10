@@ -26,7 +26,7 @@ const (
 	unknownLabel  = "Unknown"
 )
 
-func filterPackages() ([]string, error) {
+func filterPkgs() ([]string, error) {
 	releases, err := data.LoadReleaseCache()
 	if err != nil {
 		// Degrade rather than fail: still list tracked packages, minus
@@ -36,7 +36,7 @@ func filterPackages() ([]string, error) {
 		return []string{}, err
 	}
 
-	pkgs := config.SortedPackageNames()
+	pkgs := config.SortedPkgNames()
 
 	if allFlag {
 		return pkgs, nil
@@ -83,7 +83,7 @@ func filterPackages() ([]string, error) {
 
 }
 
-func resolveOutdatedLabel(release data.LocalPackageData) (label string) {
+func resolveOutdatedLabel(release data.LocalPkgData) (label string) {
 
 	switch release.ResolveVersionStatus() {
 	case data.Unknown:
@@ -114,7 +114,7 @@ var lsCmd = &cobra.Command{
 			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: showing packages without cached data (%v)\n", err)
 		}
 
-		pkgs, err := filterPackages()
+		pkgs, err := filterPkgs()
 
 		if err != nil {
 			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: filtering failed (%v)\n", err)
@@ -136,8 +136,8 @@ var lsCmd = &cobra.Command{
 		nameWidth := collections.LongestString(pkgs)
 
 		versionWidth := 0
-		for _, packageName := range pkgs {
-			currentVersion := releases[packageName].InstalledVersion
+		for _, pkgName := range pkgs {
+			currentVersion := releases[pkgName].InstalledVersion
 			if currentVersion == "" {
 				currentVersion = unknownLabel
 			}
@@ -146,31 +146,31 @@ var lsCmd = &cobra.Command{
 			}
 		}
 
-		for _, packageName := range pkgs {
-			release := releases[packageName]
+		for _, pkgName := range pkgs {
+			release := releases[pkgName]
 			currentVersion := release.InstalledVersion
 
 			if currentVersion == "" {
 				currentVersion = unknownLabel
 			}
 
-			fmt.Printf("%-*s %-*s -> %s\n", nameWidth, packageName, versionWidth, currentVersion, release.LatestVersion)
+			fmt.Printf("%-*s %-*s -> %s\n", nameWidth, pkgName, versionWidth, currentVersion, release.LatestVersion)
 		}
 
 		return nil
 	},
 }
 
-func longOutput(pkgs []string, releases map[string]data.LocalPackageData) error {
+func longOutput(pkgs []string, releases map[string]data.LocalPkgData) error {
 	table := tablewriter.NewWriter(os.Stdout)
 
 	table.Header("Package", "Latest version", "Installed version", "Outdated", "Published", "Last fetched")
 
-	for _, packageName := range pkgs {
-		release := releases[packageName]
+	for _, pkgName := range pkgs {
+		release := releases[pkgName]
 
 		row := []string{
-			packageName,
+			pkgName,
 			release.LatestVersion,
 			release.InstalledVersion,
 			resolveOutdatedLabel(release),
@@ -178,7 +178,7 @@ func longOutput(pkgs []string, releases map[string]data.LocalPackageData) error 
 			dateUtils.HumanTimeSince(release.FetchedAt),
 		}
 		if err := table.Append(row); err != nil {
-			return fmt.Errorf("ls: building row for %q: %w", packageName, err)
+			return fmt.Errorf("ls: building row for %q: %w", pkgName, err)
 		}
 	}
 

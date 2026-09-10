@@ -17,27 +17,27 @@ var fetchCmd = &cobra.Command{
 	Use:   "fetch",
 	Short: "Updates the local cache for package data",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		names := config.SortedPackageNames()
+		names := config.SortedPkgNames()
 
 		if len(args) > 0 {
 			names = args
 		}
 
 		var failed int
-		for _, packageName := range names {
-			pkgConfig, ok := config.Cfg.Packages[packageName]
+		for _, pkgName := range names {
+			pkgConfig, ok := config.Cfg.Pkgs[pkgName]
 			if !ok {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: not found in config\n", packageName)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: not found in config\n", pkgName)
 				failed++
 				continue
 			}
 
-			err := providers.CacheRelease(packageName, pkgConfig)
+			err := providers.CacheRelease(pkgName, pkgConfig)
 			if err != nil {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: %v\n", packageName, err)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: %v\n", pkgName, err)
 				failed++
 			} else {
-				fmt.Println("fetched " + packageName)
+				fmt.Println("fetched " + pkgName)
 			}
 		}
 

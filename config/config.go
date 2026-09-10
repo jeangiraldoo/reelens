@@ -10,10 +10,10 @@ import (
 )
 
 type Config struct {
-	Packages map[string]Package `yaml:"packages"`
+	Pkgs map[string]Pkg `yaml:"packages"`
 }
 
-type Package struct {
+type Pkg struct {
 	Provider  ProviderRef `yaml:"provider"`
 	Version   string      `yaml:"version"`
 	Changelog Changelog   `yaml:"changelog"`
@@ -78,9 +78,9 @@ func Load() error {
 	return nil
 }
 
-func SortedPackageNames() []string {
-	names := make([]string, 0, len(Cfg.Packages))
-	for name := range Cfg.Packages {
+func SortedPkgNames() []string {
+	names := make([]string, 0, len(Cfg.Pkgs))
+	for name := range Cfg.Pkgs {
 		names = append(names, name)
 	}
 	sort.Strings(names)

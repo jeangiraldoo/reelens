@@ -18,7 +18,7 @@ func init() {
 	providers.Register("github", githubProvider{})
 }
 
-func (githubProvider) GetLatestRelease(pkgName string, pkgConfig config.Package) (release data.Release, err error) {
+func (githubProvider) GetLatestRelease(pkgName string, pkgConfig config.Pkg) (release data.Release, err error) {
 	githubConfig, err := providers.DecodeProviderConfig[githubConfig](pkgConfig)
 	if err != nil {
 		return data.Release{}, err

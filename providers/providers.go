@@ -8,7 +8,7 @@ import (
 )
 
 type Provider interface {
-	GetLatestRelease(pkgName string, pkg config.Package) (data.Release, error)
+	GetLatestRelease(pkgName string, pkg config.Pkg) (data.Release, error)
 }
 
 var CachePath string
@@ -30,13 +30,13 @@ func Lookup(name string) (Provider, error) {
 	return p, err
 }
 
-func CacheRelease(packageName string, pkg config.Package) error {
+func CacheRelease(pkgName string, pkg config.Pkg) error {
 	provider, err := Lookup(pkg.Provider.Type)
 	if err != nil {
 		return err
 	}
 
-	release, err := provider.GetLatestRelease(packageName, pkg)
+	release, err := provider.GetLatestRelease(pkgName, pkg)
 	if err != nil {
 		return err
 	}
@@ -46,16 +46,16 @@ func CacheRelease(packageName string, pkg config.Package) error {
 		return err
 	}
 
-	cache[packageName] = data.LocalPackageData{
+	cache[pkgName] = data.LocalPkgData{
 		Release:          release,
 		FetchedAt:        time.Now().Format(time.RFC3339),
-		InstalledVersion: cache[packageName].InstalledVersion,
+		InstalledVersion: cache[pkgName].InstalledVersion,
 	}
 
 	return data.SaveReleaseCache(cache)
 }
 
-func DecodeProviderConfig[T any](pkgConfig config.Package) (cfg T, err error) {
+func DecodeProviderConfig[T any](pkgConfig config.Pkg) (cfg T, err error) {
 	if pkgConfig.Provider.Node == nil {
 		return cfg, errors.New("provider has no configuration")
 	}
