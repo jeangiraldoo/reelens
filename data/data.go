@@ -13,7 +13,7 @@ import (
 
 const (
 	dirName          = "reelens"
-	packagesFileName = "release.json"
+	packagesFileName = "packages.json"
 )
 
 // ReleaseState classifies where a package's installed version stands relative
