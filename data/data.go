@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	dirName       = "reelens"
-	pkgDataFile   = "packages.json"
+	dirName     = "reelens"
+	pkgDataFile = "packages.json"
 )
 
 // ReleaseState classifies where a package's installed version stands relative
@@ -42,6 +42,8 @@ type LocalPkgData struct {
 	FetchedAt        string `json:"fetchedAt"`
 	InstalledVersion string `json:"installedVersion"`
 }
+
+type LocalPkgs = map[string]LocalPkgData
 
 var PkgDataFilePath string
 
@@ -111,8 +113,8 @@ func SetCachedReleaseInstalledVersion(pkgName, newVersion string) error {
 	return SaveReleaseCache(cache)
 }
 
-func LoadReleaseCache() (map[string]LocalPkgData, error) {
-	cache := make(map[string]LocalPkgData)
+func LoadReleaseCache() (LocalPkgs, error) {
+	cache := make(LocalPkgs)
 
 	data, err := os.ReadFile(PkgDataFilePath)
 	if err != nil {
@@ -138,7 +140,7 @@ func LoadReleaseCache() (map[string]LocalPkgData, error) {
 // beside the real one, then renamed over it. Rename is only atomic within
 // one filesystem — hence the sibling placement — so readers always see
 // either the complete old file or the complete new one, never a torn mix.
-func SaveReleaseCache(cache map[string]LocalPkgData) error {
+func SaveReleaseCache(cache LocalPkgs) error {
 	data, err := json.MarshalIndent(cache, "", "  ")
 	if err != nil {
 		return err
