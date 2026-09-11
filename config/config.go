@@ -44,26 +44,24 @@ type Changelog struct {
 	Path string `yaml:"path"`
 }
 
-var Cfg Config
+const (
+	configDirName      = "reelens"
+	mainConfigFileName = "config.yaml"
+)
 
-// DefaultPath returns the location reelens reads its configuration from.
-func DefaultPath() string {
-	base, err := os.UserConfigDir()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(base, "reelens", "config.yaml")
-}
+var Cfg Config
 
 // Load reads and parses the configuration file into Cfg. A missing config
 // file is not an error: Cfg simply stays empty.
 func Load() error {
-	path := DefaultPath()
-	if path == "" {
+	userConfigDir, err := os.UserConfigDir()
+	if err != nil {
 		return errors.New("could not determine user config directory")
 	}
 
-	data, err := os.ReadFile(path)
+	mainConfigFilePath := filepath.Join(userConfigDir, configDirName, mainConfigFileName)
+
+	data, err := os.ReadFile(mainConfigFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil // first run, no config yet
