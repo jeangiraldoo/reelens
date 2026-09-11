@@ -3,9 +3,7 @@ package data
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"github.com/Masterminds/semver/v3"
 	"os"
 	"path/filepath"
 	"reelens/utils/system"
@@ -15,31 +13,6 @@ const (
 	dirName     = "reelens"
 	pkgDataFile = "packages.json"
 )
-
-// ReleaseState classifies where a package's installed version stands relative
-// to its latest known version.
-type ReleaseState int
-
-const (
-	Unknown ReleaseState = iota
-	Current
-	Outdated
-	Ahead
-)
-
-type Release struct {
-	LatestVersion string `json:"latestVersion"`
-	PublishedDate string `json:"publishedDate"`
-}
-
-type LocalPkg struct {
-	Release
-
-	FetchedAt        string `json:"fetchedAt"`
-	InstalledVersion string `json:"installedVersion"`
-}
-
-type LocalPkgs = map[string]LocalPkg
 
 var PkgDataFilePath string
 
@@ -59,54 +32,6 @@ func Init() error {
 	const cacheDirPerm = 0o755
 
 	return os.MkdirAll(dataDirPath, cacheDirPerm)
-}
-
-// ResolveVersionStatus compares the installed version against the latest known
-// version and classifies the outcome. Non-semver values fall back to plain
-// string equality, since their relative order cannot be determined.
-func (r LocalPkg) ResolveVersionStatus() ReleaseState {
-	if r.InstalledVersion == "" {
-		return Unknown
-	}
-
-	latest, latestErr := semver.NewVersion(r.LatestVersion)
-	installed, installedErr := semver.NewVersion(r.InstalledVersion)
-
-	if latestErr != nil || installedErr != nil {
-		if r.InstalledVersion == r.LatestVersion {
-			return Current
-		}
-		return Outdated
-	}
-
-	switch installed.Compare(latest) {
-	case -1:
-		return Outdated
-	case 0:
-		return Current
-	default:
-		return Ahead
-	}
-}
-
-func SetInstalledVersion(pkgName, newVersion string) error {
-	cache, err := LoadPkgs()
-
-	if err != nil {
-		return err
-	}
-
-	cachePkgData, ok := cache[pkgName]
-
-	if !ok {
-		return errors.New("unknown package: " + pkgName)
-	}
-
-	cachePkgData.InstalledVersion = newVersion
-
-	cache[pkgName] = cachePkgData
-
-	return SaveReleaseCache(cache)
 }
 
 func LoadPkgs() (LocalPkgs, error) {
@@ -129,16 +54,12 @@ func LoadPkgs() (LocalPkgs, error) {
 		return nil, fmt.Errorf("cannot parse the release cache: %w", err)
 	}
 
-	return pkgsData, nil
-}
-
-func SaveReleaseCache(cache LocalPkgs) error {
-	data, err := json.MarshalIndent(cache, "", "  ")
-	if err != nil {
-		return err
+	for pkgName, pkgData := range pkgsData {
+		pkgData.Name = pkgName
+		pkgsData[pkgName] = pkgData
 	}
 
-	return writeFile(PkgDataFilePath, data)
+	return pkgsData, nil
 }
 
 // Writes the file atomically: content is written to a temporary file beside
