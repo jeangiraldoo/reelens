@@ -20,7 +20,7 @@ func NewRoot(cfg config.Config) *cobra.Command {
 
 	root.AddCommand(fetchCmd(cfg))
 	root.AddCommand(lsCmd(cfg))
-	root.AddCommand(setCmd())
+	root.AddCommand(setCmd(cfg))
 
 	return root
 }
