@@ -80,7 +80,9 @@ func writeFile(filePath string, data []byte) error {
 	if err := tmp.Close(); err != nil {
 		return fmt.Errorf("cannot close temporary file: %w", err)
 	}
-	if err := os.Chmod(tmp.Name(), 0o640); err != nil {
+
+	const tempPermissions = 0o640
+	if err := os.Chmod(tmp.Name(), tempPermissions); err != nil {
 		return fmt.Errorf("cannot set file permissions: %w", err)
 	}
 	if err := os.Rename(tmp.Name(), filePath); err != nil {
