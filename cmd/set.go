@@ -9,7 +9,7 @@ import (
 
 const expectedArgs = 2 // <package name> <version>
 
-func setCmd(config config.Config) *cobra.Command {
+func setCmd(config config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 	return &cobra.Command{
 		Use:   "set <package> <version>",
 		Short: "Sets the installed version of a package",
@@ -28,17 +28,12 @@ Example:
 				return fmt.Errorf("unknown package: %s", pkgName)
 			}
 
-			pkgs, err := data.LoadPkgs()
-			if err != nil {
-				return fmt.Errorf("could not load packages: %w", err)
-			}
-
-			pkg := pkgs[pkgName]
+			pkg := pkgsData[pkgName]
 
 			pkg.InstalledVersion = version
-			pkgs[pkgName] = pkg
+			pkgsData[pkgName] = pkg
 
-			if err := pkgs.Save(); err != nil {
+			if err := pkgsData.Save(); err != nil {
 				return fmt.Errorf("could not set %s: %w", pkgName, err)
 			}
 

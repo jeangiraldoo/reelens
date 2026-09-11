@@ -27,11 +27,9 @@ const (
 )
 
 // filterPkgs applies the requested status filters to the configured package
-// names. When the cache is unavailable (degraded), filters are skipped so the
-// tracked packages still show, minus cached columns, rather than vanishing
-// behind the default "only outdated" filter.
-func filterPkgs(pkgs []string, pkgsData data.LocalPkgs, degraded bool) []string {
-	if allFlag || degraded {
+// names.
+func filterPkgs(pkgs []string, pkgsData data.LocalPkgs) []string {
+	if allFlag {
 		return pkgs
 	}
 
@@ -89,22 +87,13 @@ func resolveOutdatedLabel(release data.LocalPkg) (label string) {
 	return
 }
 
-func lsCmd(cfg config.Config) *cobra.Command {
+func lsCmd(cfg config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 	var lsCmd = &cobra.Command{
 		Use:   "ls",
 		Short: "Lists the packages being tracked",
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			pkgsData, err := data.LoadPkgs()
-			degraded := err != nil
-			if degraded {
-				// Degrade rather than fail: still list tracked packages, minus
-				// cached columns.
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: showing packages without cached data (%v)\n", err)
-				pkgsData = data.LocalPkgs{}
-			}
-
-			pkgs := filterPkgs(cfg.SortedPkgNames(), pkgsData, degraded)
+			pkgs := filterPkgs(cfg.SortedPkgNames(), pkgsData)
 
 			if len(pkgs) == 0 {
 				fmt.Println("no new versions available")
