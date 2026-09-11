@@ -10,7 +10,7 @@ import (
 	_ "reelens/providers/all"
 )
 
-func NewRoot(cfg config.Config) *cobra.Command {
+func NewRoot(cfg config.Config) (*cobra.Command, error) {
 	root := &cobra.Command{
 		Use:          "reelens",
 		Short:        "Tracks package changes, commits and releases.",
@@ -18,11 +18,16 @@ func NewRoot(cfg config.Config) *cobra.Command {
 		SilenceUsage: true,
 	}
 
-	root.AddCommand(fetchCmd(cfg))
-	root.AddCommand(lsCmd(cfg))
-	root.AddCommand(setCmd(cfg))
+	pkgsData, err := data.LoadPkgs()
+	if err != nil {
+		return nil, fmt.Errorf("could not load packages: %w", err)
+	}
 
-	return root
+	root.AddCommand(fetchCmd(cfg, pkgsData))
+	root.AddCommand(lsCmd(cfg, pkgsData))
+	root.AddCommand(setCmd(cfg, pkgsData))
+
+	return root, nil
 }
 
 // Execute is called by main.main(). It loads the configuration and the data
@@ -40,7 +45,13 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	if err := NewRoot(cfg).Execute(); err != nil {
+	command, err := NewRoot(cfg)
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	if err := command.Execute(); err != nil {
 		os.Exit(1)
 	}
 }

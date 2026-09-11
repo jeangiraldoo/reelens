@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"reelens/config"
+	"reelens/data"
 	"reelens/providers"
 )
 
@@ -13,7 +14,7 @@ import (
 // run are the actual report.
 var errFetchFailed = errors.New("fetch failed")
 
-func fetchCmd(cfg config.Config) *cobra.Command {
+func fetchCmd(cfg config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 	return &cobra.Command{
 		Use:   "fetch",
 		Short: "Updates the local cache for package data",
@@ -33,13 +34,17 @@ func fetchCmd(cfg config.Config) *cobra.Command {
 					continue
 				}
 
-				err := providers.CacheRelease(pkgName, pkgConfig)
+				err := providers.CacheRelease(pkgName, pkgConfig, pkgsData)
 				if err != nil {
 					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: %v\n", pkgName, err)
 					failed++
 				} else {
 					fmt.Println("fetched " + pkgName)
 				}
+			}
+
+			if err := pkgsData.Save(); err != nil {
+				return fmt.Errorf("could not save packages: %w", err)
 			}
 
 			if failed > 0 {

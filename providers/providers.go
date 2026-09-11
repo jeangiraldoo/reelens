@@ -27,18 +27,13 @@ func Lookup(name string) (Provider, error) {
 	return p, err
 }
 
-func CacheRelease(pkgName string, pkg config.Pkg) error {
+func CacheRelease(pkgName string, pkg config.Pkg, pkgsData data.LocalPkgs) error {
 	provider, err := Lookup(pkg.Provider.Type)
 	if err != nil {
 		return err
 	}
 
 	release, err := provider.GetLatestRelease(pkgName, pkg)
-	if err != nil {
-		return err
-	}
-
-	pkgsData, err := data.LoadPkgs()
 	if err != nil {
 		return err
 	}
@@ -50,7 +45,7 @@ func CacheRelease(pkgName string, pkg config.Pkg) error {
 		InstalledVersion: pkgsData[pkgName].InstalledVersion,
 	}
 
-	return pkgsData.Save()
+	return nil
 }
 
 func DecodeProviderConfig[T any](pkgConfig config.Pkg) (cfg T, err error) {
