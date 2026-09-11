@@ -26,20 +26,13 @@ const (
 	unknownLabel  = "Unknown"
 )
 
-func filterPkgs() ([]string, error) {
-	pkgsData, err := data.LoadPkgs()
-	if err != nil {
-		// Degrade rather than fail: still list tracked packages, minus
-		// cached columns. releases is nil here — safe to read, every
-		// lookup misses. The write is discarded because losing the
-		// warning changes neither the rendered table nor the exit status.
-		return []string{}, err
-	}
-
-	pkgs := config.SortedPkgNames()
-
-	if allFlag {
-		return pkgs, nil
+// filterPkgs applies the requested status filters to the configured package
+// names. When the cache is unavailable (degraded), filters are skipped so the
+// tracked packages still show, minus cached columns, rather than vanishing
+// behind the default "only outdated" filter.
+func filterPkgs(pkgs []string, pkgsData data.LocalPkgs, degraded bool) []string {
+	if allFlag || degraded {
+		return pkgs
 	}
 
 	var filters []func(data.ReleaseState) bool
@@ -69,7 +62,7 @@ func filterPkgs() ([]string, error) {
 		})
 	}
 
-	pkgs = collections.Filter(pkgs, func(element string) bool {
+	return collections.Filter(pkgs, func(element string) bool {
 		status := pkgsData[element].ResolveVersionStatus()
 		for _, filter := range filters {
 			if filter(status) {
@@ -78,9 +71,6 @@ func filterPkgs() ([]string, error) {
 		}
 		return false
 	})
-
-	return pkgs, nil
-
 }
 
 func resolveOutdatedLabel(release data.LocalPkg) (label string) {
@@ -99,66 +89,67 @@ func resolveOutdatedLabel(release data.LocalPkg) (label string) {
 	return
 }
 
-var lsCmd = &cobra.Command{
-	Use:   "ls",
-	Short: "Lists the packages being tracked",
+func lsCmd(cfg config.Config) *cobra.Command {
+	var lsCmd = &cobra.Command{
+		Use:   "ls",
+		Short: "Lists the packages being tracked",
 
-	RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
+			pkgsData, err := data.LoadPkgs()
+			degraded := err != nil
+			if degraded {
+				// Degrade rather than fail: still list tracked packages, minus
+				// cached columns.
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: showing packages without cached data (%v)\n", err)
+				pkgsData = data.LocalPkgs{}
+			}
 
-		pkgsData, err := data.LoadPkgs()
-		if err != nil {
-			// Degrade rather than fail: still list tracked packages, minus
-			// cached columns. releases is nil here — safe to read, every
-			// lookup misses. The write is discarded because losing the
-			// warning changes neither the rendered table nor the exit status.
-			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: showing packages without cached data (%v)\n", err)
-		}
+			pkgs := filterPkgs(cfg.SortedPkgNames(), pkgsData, degraded)
 
-		pkgs, err := filterPkgs()
+			if len(pkgs) == 0 {
+				fmt.Println("no new versions available")
+				return nil
+			}
 
-		if err != nil {
-			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: filtering failed (%v)\n", err)
-		}
+			if longFlag {
+				return longOutput(pkgs, pkgsData)
+			}
 
-		if len(pkgs) == 0 {
-			fmt.Println("no new versions available")
-			return nil
-		}
+			nameWidth := collections.LongestString(pkgs)
 
-		if longFlag {
-			if err = longOutput(pkgs, pkgsData); err != nil {
-				return err
+			versionWidth := 0
+			for _, pkgName := range pkgs {
+				currentVersion := pkgsData[pkgName].InstalledVersion
+				if currentVersion == "" {
+					currentVersion = unknownLabel
+				}
+				if len(currentVersion) > versionWidth {
+					versionWidth = len(currentVersion)
+				}
+			}
+
+			for _, pkgName := range pkgs {
+				release := pkgsData[pkgName]
+				currentVersion := release.InstalledVersion
+
+				if currentVersion == "" {
+					currentVersion = unknownLabel
+				}
+
+				fmt.Printf("%-*s %-*s -> %s\n", nameWidth, pkgName, versionWidth, currentVersion, release.LatestVersion)
 			}
 
 			return nil
-		}
+		},
+	}
 
-		nameWidth := collections.LongestString(pkgs)
+	lsCmd.Flags().BoolVarP(&notOutdatedFlag, "not-outdated", "u", false, "filter for up-to-date packages")
+	lsCmd.Flags().BoolVar(&aheadFlag, "ahead", false, "filter for packages ahead of latest")
+	lsCmd.Flags().BoolVar(&unknownFlag, "unknown", false, "filter for packages without an installed version")
+	lsCmd.Flags().BoolVarP(&longFlag, "long", "l", false, "show detailed table output")
+	lsCmd.Flags().BoolVarP(&allFlag, "all", "a", false, "show all packages")
 
-		versionWidth := 0
-		for _, pkgName := range pkgs {
-			currentVersion := pkgsData[pkgName].InstalledVersion
-			if currentVersion == "" {
-				currentVersion = unknownLabel
-			}
-			if len(currentVersion) > versionWidth {
-				versionWidth = len(currentVersion)
-			}
-		}
-
-		for _, pkgName := range pkgs {
-			release := pkgsData[pkgName]
-			currentVersion := release.InstalledVersion
-
-			if currentVersion == "" {
-				currentVersion = unknownLabel
-			}
-
-			fmt.Printf("%-*s %-*s -> %s\n", nameWidth, pkgName, versionWidth, currentVersion, release.LatestVersion)
-		}
-
-		return nil
-	},
+	return lsCmd
 }
 
 func longOutput(pkgs []string, localPkgsData data.LocalPkgs) error {
@@ -187,14 +178,4 @@ func longOutput(pkgs []string, localPkgsData data.LocalPkgs) error {
 	}
 
 	return nil
-}
-
-func init() {
-	rootCmd.AddCommand(lsCmd)
-
-	lsCmd.Flags().BoolVarP(&notOutdatedFlag, "not-outdated", "u", false, "filter for up-to-date packages")
-	lsCmd.Flags().BoolVar(&aheadFlag, "ahead", false, "filter for packages ahead of latest")
-	lsCmd.Flags().BoolVar(&unknownFlag, "unknown", false, "filter for packages without an installed version")
-	lsCmd.Flags().BoolVarP(&longFlag, "long", "l", false, "show detailed table output")
-	lsCmd.Flags().BoolVarP(&allFlag, "all", "a", false, "show all packages")
 }
