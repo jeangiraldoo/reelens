@@ -3,12 +3,13 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"reelens/config"
 	"reelens/data"
 )
 
 const expectedArgs = 2 // <package name> <version>
 
-func setCmd() *cobra.Command {
+func setCmd(config config.Config) *cobra.Command {
 	return &cobra.Command{
 		Use:   "set <package> <version>",
 		Short: "Sets the installed version of a package",
@@ -21,18 +22,23 @@ Example:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pkgName, version := args[0], args[1]
 
+			_, ok := config.Pkgs[pkgName]
+
+			if !ok {
+				return fmt.Errorf("unknown package: %s", pkgName)
+			}
+
 			pkgs, err := data.LoadPkgs()
 			if err != nil {
 				return fmt.Errorf("could not load packages: %w", err)
 			}
 
-			pkg, ok := pkgs[pkgName]
-			if !ok {
-				return fmt.Errorf("unknown package: %s", pkgName)
-			}
+			pkg := pkgs[pkgName]
 
-			err = pkg.SetInstalledVersion(version)
-			if err != nil {
+			pkg.InstalledVersion = version
+			pkgs[pkgName] = pkg
+
+			if err := pkgs.Save(); err != nil {
 				return fmt.Errorf("could not set %s: %w", pkgName, err)
 			}
 
