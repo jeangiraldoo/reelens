@@ -21,7 +21,17 @@ Example:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pkgName, version := args[0], args[1]
 
-			err := data.SetInstalledVersion(pkgName, version)
+			pkgs, err := data.LoadPkgs()
+			if err != nil {
+				return fmt.Errorf("could not load packages: %w", err)
+			}
+
+			pkg, ok := pkgs[pkgName]
+			if !ok {
+				return fmt.Errorf("unknown package: %s", pkgName)
+			}
+
+			err = pkg.SetInstalledVersion(version)
 			if err != nil {
 				return fmt.Errorf("could not set %s: %w", pkgName, err)
 			}

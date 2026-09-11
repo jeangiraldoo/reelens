@@ -44,12 +44,13 @@ func CacheRelease(pkgName string, pkg config.Pkg) error {
 	}
 
 	pkgsData[pkgName] = data.LocalPkg{
+		Name:             pkgName,
 		Release:          release,
 		FetchedAt:        time.Now().Format(time.RFC3339),
 		InstalledVersion: pkgsData[pkgName].InstalledVersion,
 	}
 
-	return data.SaveReleaseCache(pkgsData)
+	return pkgsData.Save()
 }
 
 func DecodeProviderConfig[T any](pkgConfig config.Pkg) (cfg T, err error) {
