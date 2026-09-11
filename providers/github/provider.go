@@ -10,7 +10,6 @@ import (
 type githubProvider struct{}
 
 type githubConfig struct {
-	Type   string `yaml:"type"`
 	RepoID string `yaml:"repoID"`
 }
 
