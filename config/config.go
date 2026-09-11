@@ -49,14 +49,12 @@ const (
 	mainConfigFileName = "config.yaml"
 )
 
-var Cfg Config
-
-// Load reads and parses the configuration file into Cfg. A missing config
-// file is not an error: Cfg simply stays empty.
-func Load() error {
+// Load reads and parses the configuration file. A missing config file is not
+// an error: an empty Config is returned.
+func Load() (Config, error) {
 	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
-		return errors.New("could not determine user config directory")
+		return Config{}, errors.New("could not determine user config directory")
 	}
 
 	mainConfigFilePath := filepath.Join(userConfigDir, configDirName, mainConfigFileName)
@@ -64,21 +62,22 @@ func Load() error {
 	data, err := os.ReadFile(mainConfigFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil // first run, no config yet
+			return Config{}, nil // first run, no config yet
 		}
-		return fmt.Errorf("cannot read the config file: %w", err)
+		return Config{}, fmt.Errorf("cannot read the config file: %w", err)
 	}
 
-	if err := yaml.Unmarshal(data, &Cfg); err != nil {
-		return fmt.Errorf("cannot parse the config file: %w", err)
+	var cfg Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return Config{}, fmt.Errorf("cannot parse the config file: %w", err)
 	}
 
-	return nil
+	return cfg, nil
 }
 
-func SortedPkgNames() []string {
-	names := make([]string, 0, len(Cfg.Pkgs))
-	for name := range Cfg.Pkgs {
+func (c Config) SortedPkgNames() []string {
+	names := make([]string, 0, len(c.Pkgs))
+	for name := range c.Pkgs {
 		names = append(names, name)
 	}
 	sort.Strings(names)

@@ -13,44 +13,42 @@ import (
 // run are the actual report.
 var errFetchFailed = errors.New("fetch failed")
 
-var fetchCmd = &cobra.Command{
-	Use:   "fetch",
-	Short: "Updates the local cache for package data",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		names := config.SortedPkgNames()
+func fetchCmd(cfg config.Config) *cobra.Command {
+	return &cobra.Command{
+		Use:   "fetch",
+		Short: "Updates the local cache for package data",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			names := cfg.SortedPkgNames()
 
-		if len(args) > 0 {
-			names = args
-		}
-
-		var failed int
-		for _, pkgName := range names {
-			pkgConfig, ok := config.Cfg.Pkgs[pkgName]
-			if !ok {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: not found in config\n", pkgName)
-				failed++
-				continue
+			if len(args) > 0 {
+				names = args
 			}
 
-			err := providers.CacheRelease(pkgName, pkgConfig)
-			if err != nil {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: %v\n", pkgName, err)
-				failed++
-			} else {
-				fmt.Println("fetched " + pkgName)
+			var failed int
+			for _, pkgName := range names {
+				pkgConfig, ok := cfg.Pkgs[pkgName]
+				if !ok {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: not found in config\n", pkgName)
+					failed++
+					continue
+				}
+
+				err := providers.CacheRelease(pkgName, pkgConfig)
+				if err != nil {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: %v\n", pkgName, err)
+					failed++
+				} else {
+					fmt.Println("fetched " + pkgName)
+				}
 			}
-		}
 
-		if failed > 0 {
-			// Reasons were already reported per package; this error exists
-			// only to drive a nonzero exit code.
-			cmd.SilenceErrors = true
-			return errFetchFailed
-		}
-		return nil
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(fetchCmd)
+			if failed > 0 {
+				// Reasons were already reported per package; this error exists
+				// only to drive a nonzero exit code.
+				cmd.SilenceErrors = true
+				return errFetchFailed
+			}
+			return nil
+		},
+	}
 }
