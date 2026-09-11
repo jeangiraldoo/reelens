@@ -11,9 +11,6 @@ type Provider interface {
 	GetLatestRelease(pkgName string, pkg config.Pkg) (data.Release, error)
 }
 
-var CachePath string
-var ReleaseCachePath string
-
 var registry = map[string]Provider{}
 
 func Register(name string, p Provider) {
