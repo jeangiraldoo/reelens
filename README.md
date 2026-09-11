@@ -30,6 +30,10 @@ your handy companion.
 ## Table of contents
 
 - [Features](#features)
+- [Commands](#commands)
+  - [fetch](#fetch)
+  - [ls](#ls)
+  - [set](#set)
 - [Configuration](#configuration)
 
 ## Features
@@ -38,6 +42,54 @@ your handy companion.
 - List every tracked package with its latest known version
 - Read a package's changelog without leaving your terminal (soon)
 - Support for many package providers such as GitHub
+
+## Commands
+
+### fetch
+
+Queries each package's provider for up-to-date release information. The updated
+information is stored locally in a `packages.json` file.
+
+This approach was chosen so that no unnecessary requests are made as most
+packages don't release new versions every other day, with the added benefit of
+minimizing the likelihood of reaching API-rate-limits.
+
+| Format                                            | Description                     | Example                                    |
+| ------------------------------------------------- | ------------------------------- | ------------------------------------------ |
+| `reelens fetch`                                   | Fetches all tracked packages    | `reelens fetch`                            |
+| `reelens fetch <package name>`                    | Fetches only the given package  | `reelens fetch neovim`                     |
+| `reelens fetch <package name> <package name> ...` | Fetches only the given packages | `reelens fetch neovim firefox git lazygit` |
+
+### ls
+
+Lists the tracked packages together with their latest known version, and
+classifies each package as outdated, up-to-date, ahead of the latest version, or
+with no installed version recorded.
+
+When no filter is given, only outdated packages are shown:
+
+| Option               | Description                                                  |
+| -------------------- | ------------------------------------------------------------ |
+| `-a, --all`          | Shows every package, regardless of status                    |
+| `-u, --not-outdated` | Shows only up-to-date packages                               |
+| `--ahead`            | Shows only packages ahead of the latest version              |
+| `--unknown`          | Shows only packages without an installed version             |
+| `-l, --long`         | Shows a detailed table with published and last-fetched dates |
+
+Multiple filters can be combined. With `-l`, each package is shown in a table
+featuring its latest version, installed version, status, and the published and
+last-fetched dates.
+
+### set
+
+Records the installed version of a package so `ls` can tell whether the package
+is outdated. The package must already be tracked in the configuration.
+
+The command takes exactly two arguments: a package name and a version:
+
+| Format                            | Description                                               | Example                   |
+| --------------------------------- | --------------------------------------------------------- | ------------------------- |
+| `reelens set <package> <version>` | Sets the given version as the package's installed version | `reelens set git v2.62.0` |
 
 ## Configuration
 
