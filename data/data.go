@@ -27,10 +27,6 @@ const (
 	Ahead
 )
 
-const (
-	cacheFilePerm = 0o640
-)
-
 type Release struct {
 	LatestVersion string `json:"latestVersion"`
 	PublishedDate string `json:"publishedDate"`
@@ -136,19 +132,21 @@ func LoadPkgs() (LocalPkgs, error) {
 	return pkgsData, nil
 }
 
-// Persists the cache atomically: content is written to a temporary file
-// beside the real one, then renamed over it. Rename is only atomic within
-// one filesystem — hence the sibling placement — so readers always see
-// either the complete old file or the complete new one, never a torn mix.
 func SaveReleaseCache(cache LocalPkgs) error {
 	data, err := json.MarshalIndent(cache, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	tmp, err := os.CreateTemp(filepath.Dir(PkgDataFilePath), "reelens-cache-*.json")
+	return writeFile(PkgDataFilePath, data)
+}
+
+// Writes the file atomically: content is written to a temporary file beside
+// the real one, then renamed over it.
+func writeFile(filePath string, data []byte) error {
+	tmp, err := os.CreateTemp(filepath.Dir(filePath), "reelens-*.tmp")
 	if err != nil {
-		return fmt.Errorf("cannot create temporary cache file: %w", err)
+		return fmt.Errorf("cannot create temporary file: %w", err)
 	}
 	// Best-effort cleanup on every exit path; after a successful rename the
 	// old name no longer exists and this becomes a harmless no-op.
@@ -156,18 +154,16 @@ func SaveReleaseCache(cache LocalPkgs) error {
 
 	if _, err := tmp.Write(data); err != nil {
 		_ = tmp.Close()
-		return fmt.Errorf("cannot write temporary cache file: %w", err)
+		return fmt.Errorf("cannot write temporary file: %w", err)
 	}
 	if err := tmp.Close(); err != nil {
-		return fmt.Errorf("cannot close temporary cache file: %w", err)
+		return fmt.Errorf("cannot close temporary file: %w", err)
 	}
-
-	if err := os.Chmod(tmp.Name(), cacheFilePerm); err != nil {
-		return fmt.Errorf("cannot set cache file permissions: %w", err)
+	if err := os.Chmod(tmp.Name(), 0o640); err != nil {
+		return fmt.Errorf("cannot set file permissions: %w", err)
 	}
-
-	if err := os.Rename(tmp.Name(), PkgDataFilePath); err != nil {
-		return fmt.Errorf("cannot swap cache file into place: %w", err)
+	if err := os.Rename(tmp.Name(), filePath); err != nil {
+		return fmt.Errorf("cannot move file into place: %w", err)
 	}
 
 	return nil
