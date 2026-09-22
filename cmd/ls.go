@@ -144,15 +144,15 @@ func lsCmd(cfg config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 func longOutput(pkgs []string, localPkgsData data.LocalPkgs) error {
 	table := tablewriter.NewWriter(os.Stdout)
 
-	table.Header("Package", "Latest version", "Installed version", "Outdated", "Published", "Last fetched")
+	table.Header("Package", "Installed version", "Latest version", "Outdated", "Published", "Last fetched")
 
 	for _, pkgName := range pkgs {
 		localPkgData := localPkgsData[pkgName]
 
 		row := []string{
 			pkgName,
-			localPkgData.LatestVersion,
 			localPkgData.InstalledVersion,
+			localPkgData.LatestVersion,
 			resolveOutdatedLabel(localPkgData),
 			dateUtils.HumanTimeSince(localPkgData.PublishedDate),
 			dateUtils.HumanTimeSince(localPkgData.FetchedAt),
