@@ -16,7 +16,7 @@ type Config struct {
 type Pkg struct {
 	Provider  ProviderRef `yaml:"provider"`
 	Version   string      `yaml:"version"`
-	Changelog Changelog   `yaml:"changelog"`
+	Changelog string      `yaml:"changelog"`
 }
 
 // ProviderRef holds the provider type and its raw YAML node. The registered
@@ -37,11 +37,6 @@ func (p *ProviderRef) UnmarshalYAML(node *yaml.Node) error {
 	}
 	p.Type = head.Type
 	return nil
-}
-
-type Changelog struct {
-	Type string `yaml:"type"`
-	Path string `yaml:"path"`
 }
 
 const (

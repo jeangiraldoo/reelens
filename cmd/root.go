@@ -26,6 +26,7 @@ func NewRoot(cfg config.Config) (*cobra.Command, error) {
 	root.AddCommand(fetchCmd(cfg, pkgsData))
 	root.AddCommand(lsCmd(cfg, pkgsData))
 	root.AddCommand(setCmd(cfg, pkgsData))
+	root.AddCommand(showCmd(cfg))
 
 	return root, nil
 }

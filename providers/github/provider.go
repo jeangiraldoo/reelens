@@ -2,6 +2,9 @@ package github
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"reelens/config"
 	"reelens/data"
 	"reelens/providers"
@@ -39,4 +42,24 @@ func (githubProvider) GetLatestRelease(pkgName string, pkgConfig config.Pkg) (re
 	// The timestamp travels exactly as GitHub sent it (RFC3339); formatting
 	// happens at display time.
 	return
+}
+
+func (githubProvider) GetFile(repo string, fileName string) ([]byte, error) {
+	branchName, err := getDefaultBranch(repo)
+
+	if err != nil {
+		return []byte{}, err
+	}
+
+	url := url.URL{Scheme: "https", Host: "raw.githubusercontent.com"}
+	u := url.JoinPath(repo, branchName, fileName)
+
+	res, err := http.Get(u.String())
+
+	if err != nil {
+		return []byte{}, err
+	}
+
+	defer res.Body.Close()
+	return io.ReadAll(res.Body)
 }
