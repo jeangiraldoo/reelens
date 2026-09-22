@@ -1,9 +1,8 @@
-# reelens
-
-/ˈriː.lɛnz/
-
-_reelens_ tracks package changes and releases so you don't have to do it
-yourself.
+<div align="center">
+  <h1>reelens /ˈriː.lɛnz/ </h1>
+  <image src="logo.svg" widht="300" height="300" />
+  <p> <b>reelens</b> tracks package changes and releases so you don't have to do it yourself. </p>
+</div>
 
 ## Elevator Pitch
 
