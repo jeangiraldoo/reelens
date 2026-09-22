@@ -2,6 +2,7 @@ package github
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -69,4 +70,21 @@ func getRequest(repo, endpoint string) (*http.Response, error) {
 	}
 
 	return nil, fmt.Errorf("github: %s: %s", resp.Status, bytes.TrimSpace(body))
+}
+
+func getDefaultBranch(repo string) (string, error) {
+	resp, err := getRequest(repo, "")
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var info struct {
+		DefaultBranch string `json:"default_branch"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		return "", err
+	}
+
+	return info.DefaultBranch, nil
 }

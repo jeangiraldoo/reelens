@@ -9,6 +9,7 @@ import (
 
 type Provider interface {
 	GetLatestRelease(pkgName string, pkg config.Pkg) (data.Release, error)
+	GetFile(repoID string, fileName string) ([]byte, error)
 }
 
 var registry = map[string]Provider{}
