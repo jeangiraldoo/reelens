@@ -3,8 +3,8 @@ package github
 import (
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
+	"reelens/apiclient"
 	"reelens/config"
 	"reelens/data"
 	"reelens/providers"
@@ -14,6 +14,16 @@ type githubProvider struct{}
 
 type githubConfig struct {
 	RepoID string `yaml:"repoID"`
+}
+
+// dataAPIBase returns the GitHub API entry point; the repos/ path prefix is
+// the provider-specific part of the URL scheme.
+func dataAPIBase() url.URL {
+	return url.URL{Scheme: "https", Host: "api.github.com", Path: "/repos"}
+}
+
+func rawAPIBase() url.URL {
+	return url.URL{Scheme: "https", Host: "raw.githubusercontent.com"}
 }
 
 func init() {
@@ -44,20 +54,18 @@ func (githubProvider) GetLatestRelease(pkgName string, pkgConfig config.Pkg) (re
 	return
 }
 
-func (githubProvider) GetFile(repo string, fileName string) ([]byte, error) {
-	branchName, err := getDefaultBranch(repo)
+func (p githubProvider) GetFile(repo string, fileName string) ([]byte, error) {
+	branchName, err := p.getDefaultBranch(repo)
 
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
-	url := url.URL{Scheme: "https", Host: "raw.githubusercontent.com"}
-	u := url.JoinPath(repo, branchName, fileName)
-
-	res, err := http.Get(u.String())
+	api := apiclient.New(rawAPIBase())
+	res, err := api.Get(repo, branchName+"/"+fileName)
 
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
 	defer res.Body.Close()
