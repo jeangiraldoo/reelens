@@ -1,9 +1,9 @@
 package github
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
+	"reelens/apiclient"
 	"reelens/data"
 )
 
@@ -37,20 +37,12 @@ func getReleaseFromTag(repo string) (data.Release, error) {
 	var latestTag githubTag
 	var latestVersion *semver.Version
 
+	api := apiclient.New(dataAPIBase())
+
 	for page := 1; ; page++ {
-
 		endpoint := fmt.Sprintf("tags?per_page=%d&page=%d", tagsPerPage, page)
-		resp, err := getRequest(repo, endpoint)
 
-		if err != nil {
-			return data.Release{}, err
-		}
-
-		var tags []githubTag
-
-		err = json.NewDecoder(resp.Body).Decode(&tags)
-		_ = resp.Body.Close()
-
+		tags, err := api.GetJSON[[]githubTag](repo, endpoint)
 		if err != nil {
 			return data.Release{}, err
 		}
@@ -89,16 +81,7 @@ func getReleaseFromTag(repo string) (data.Release, error) {
 		)
 	}
 
-	resp, err := getRequest(repo, "commits/"+latestTag.Commit.SHA)
-
-	if err != nil {
-		return data.Release{}, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	var commit githubCommit
-
-	err = json.NewDecoder(resp.Body).Decode(&commit)
+	commit, err := api.GetJSON[githubCommit](repo, "commits/"+latestTag.Commit.SHA)
 	if err != nil {
 		return data.Release{}, err
 	}
@@ -110,15 +93,10 @@ func getReleaseFromTag(repo string) (data.Release, error) {
 }
 
 func getLatestFromRelease(repo string) (data.Release, error) {
-	resp, err := getRequest(repo, "releases/latest")
-	if err != nil {
-		return data.Release{}, err
-	}
-	defer func() { _ = resp.Body.Close() }()
+	api := apiclient.New(dataAPIBase())
 
-	var release githubRelease
+	release, err := api.GetJSON[githubRelease](repo, "releases/latest")
 
-	err = json.NewDecoder(resp.Body).Decode(&release)
 	if err != nil {
 		return data.Release{}, err
 	}
