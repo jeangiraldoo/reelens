@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	host             = "api.github.com"
 	maxErrorBodyLen  = 1024 // error payloads are tiny JSON snippets; never slurp more
 	secondsPerMinute = 60
 )
@@ -25,25 +24,17 @@ const apiTimeout = 15 * time.Second
 
 var httpClient = &http.Client{Timeout: apiTimeout}
 
-// Builds the API URL for a repository endpoint. Endpoints may carry a query
-// string ("tags?per_page=100&page=1"), which is preserved verbatim; path
-// segments are escaped properly instead of concatenated blind.
-func apiURL(repo, endpoint string) string {
-	base := url.URL{Scheme: "https", Host: host}
-
-	path, query, _ := strings.Cut(endpoint, "?")
-	u := base.JoinPath("repos", repo, path)
-	u.RawQuery = query
-
-	return u.String()
-}
-
 // Performs a GET against the GitHub API. On success the response is handed
 // to the caller, who must read and close its body. On any failure the body
 // is drained and closed here and only an error comes back, so callers can
 // safely ignore the response whenever err is non-nil.
 func getRequest(repo, endpoint string) (*http.Response, error) {
-	resp, err := httpClient.Get(apiURL(repo, endpoint))
+	base := url.URL{Scheme: "https", Host: "api.github.com"}
+	path, query, _ := strings.Cut(endpoint, "?")
+	u := base.JoinPath("repos", repo, path)
+	u.RawQuery = query
+
+	resp, err := httpClient.Get(u.String())
 	if err != nil {
 		return nil, err
 	}
