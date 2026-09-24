@@ -78,3 +78,13 @@ func (c Config) SortedPkgNames() []string {
 	sort.Strings(names)
 	return names
 }
+
+// GetPkg returns the config entry for pkgName.
+func (c Config) GetPkg(pkgName string) (Pkg, error) {
+	pkgConfig, ok := c.Pkgs[pkgName]
+	if !ok {
+		return Pkg{}, fmt.Errorf("package %q not found in config", pkgName)
+	}
+
+	return pkgConfig, nil
+}
