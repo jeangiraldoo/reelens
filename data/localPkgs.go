@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/json"
+	"reelens/utils/system"
 )
 
 // LocalPkgs holds every tracked package keyed by name.
@@ -14,5 +15,5 @@ func (pkgs LocalPkgs) Save() error {
 		return err
 	}
 
-	return writeFile(PkgDataFilePath, data)
+	return system.WriteFile(PkgDataFilePath, data)
 }
