@@ -34,13 +34,22 @@ func fetchCmd(cfg config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 					continue
 				}
 
-				err := providers.CacheRelease(pkgName, pkgConfig, pkgsData)
+				provider, err := providers.Lookup(pkgConfig.Provider.Type)
 				if err != nil {
 					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: %v\n", pkgName, err)
 					failed++
-				} else {
-					fmt.Println("fetched " + pkgName)
+					continue
 				}
+
+				release, err := provider.GetLatestRelease(pkgName, pkgConfig)
+				if err != nil {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: %v\n", pkgName, err)
+					failed++
+					continue
+				}
+
+				pkgsData.SetRelease(pkgName, release)
+				fmt.Println("fetched " + pkgName)
 			}
 
 			if err := pkgsData.Save(); err != nil {

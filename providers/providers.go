@@ -4,7 +4,6 @@ import (
 	"errors"
 	"reelens/config"
 	"reelens/data"
-	"time"
 )
 
 type Provider interface {
@@ -26,27 +25,6 @@ func Lookup(name string) (Provider, error) {
 		err = errors.New("unknown provider: " + name)
 	}
 	return p, err
-}
-
-func CacheRelease(pkgName string, pkg config.Pkg, pkgsData data.LocalPkgs) error {
-	provider, err := Lookup(pkg.Provider.Type)
-	if err != nil {
-		return err
-	}
-
-	release, err := provider.GetLatestRelease(pkgName, pkg)
-	if err != nil {
-		return err
-	}
-
-	pkgsData[pkgName] = data.LocalPkg{
-		Name:             pkgName,
-		Release:          release,
-		FetchedAt:        time.Now().Format(time.RFC3339),
-		InstalledVersion: pkgsData[pkgName].InstalledVersion,
-	}
-
-	return nil
 }
 
 func DecodeProviderConfig[T any](pkgConfig config.Pkg) (cfg T, err error) {
