@@ -22,10 +22,8 @@ Example:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pkgName, version := args[0], args[1]
 
-			_, ok := config.Pkgs[pkgName]
-
-			if !ok {
-				return fmt.Errorf("unknown package: %s", pkgName)
+			if _, err := config.GetPkg(pkgName); err != nil {
+				return err
 			}
 
 			pkg := pkgsData[pkgName]

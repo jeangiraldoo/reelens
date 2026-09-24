@@ -27,9 +27,9 @@ func fetchCmd(cfg config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 
 			var failed int
 			for _, pkgName := range names {
-				pkgConfig, ok := cfg.Pkgs[pkgName]
-				if !ok {
-					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: not found in config\n", pkgName)
+				pkgConfig, err := cfg.GetPkg(pkgName)
+				if err != nil {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch %s: %v\n", pkgName, err)
 					failed++
 					continue
 				}

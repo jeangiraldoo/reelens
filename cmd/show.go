@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"github.com/charmbracelet/gum/pager"
 	"github.com/spf13/cobra"
 	"reelens/config"
@@ -28,10 +27,9 @@ The first argument selects what to show, for example a changelog:
 
 			resource, pkgName := args[0], args[1]
 
-			pkg, ok := cfg.Pkgs[pkgName]
-
-			if !ok {
-				return fmt.Errorf("unknown package: %s", pkgName)
+			pkg, err := cfg.GetPkg(pkgName)
+			if err != nil {
+				return err
 			}
 
 			switch resource {
