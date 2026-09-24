@@ -54,8 +54,8 @@ func (githubProvider) GetLatestRelease(pkgName string, pkgConfig config.Pkg) (re
 	return
 }
 
-func (p githubProvider) GetFile(repo string, fileName string) ([]byte, error) {
-	branchName, err := p.getDefaultBranch(repo)
+func (githubProvider) GetFile(repo string, fileName string) ([]byte, error) {
+	branchName, err := getDefaultBranch(repo)
 
 	if err != nil {
 		return nil, err
@@ -70,4 +70,20 @@ func (p githubProvider) GetFile(repo string, fileName string) ([]byte, error) {
 
 	defer res.Body.Close()
 	return io.ReadAll(res.Body)
+}
+
+func getDefaultBranch(repo string) (string, error) {
+	type info struct {
+		DefaultBranch string `json:"default_branch"`
+	}
+
+	api := apiclient.New(dataAPIBase())
+
+	res, err := api.GetJSON[info](repo, "")
+
+	if err != nil {
+		return "", err
+	}
+
+	return res.DefaultBranch, nil
 }
