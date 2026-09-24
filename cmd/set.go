@@ -7,8 +7,6 @@ import (
 	"reelens/data"
 )
 
-const expectedArgs = 2 // <package name> <version>
-
 func setCmd(config config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 	return &cobra.Command{
 		Use:   "set <package> <version>",
@@ -18,7 +16,7 @@ recording it so ls can tell whether the package is outdated.
 
 Example:
   reelens set git v2.62.0`,
-		Args: cobra.ExactArgs(expectedArgs),
+		Args: cobra.ExactArgs(2), //nolint:mnd
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pkgName, version := args[0], args[1]
 

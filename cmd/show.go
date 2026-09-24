@@ -17,14 +17,8 @@ func showCmd(cfg config.Config) *cobra.Command {
 The first argument selects what to show, for example a changelog:
 
   reelens show changelog neovim`,
+		Args: cobra.ExactArgs(2), //nolint:mnd
 		RunE: func(cmd *cobra.Command, args []string) error {
-			switch len(args) {
-			case 0:
-				return errors.New("no arguments provided")
-			case 1:
-				return errors.New("no package name provided")
-			}
-
 			resource, pkgName := args[0], args[1]
 
 			pkg, err := cfg.GetPkg(pkgName)
