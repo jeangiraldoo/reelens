@@ -6,6 +6,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
+	"reelens/appinfo"
 	"sort"
 )
 
@@ -40,7 +41,7 @@ func (p *ProviderRef) UnmarshalYAML(node *yaml.Node) error {
 }
 
 const (
-	configDirName      = "reelens"
+	configDirName      = appinfo.Name
 	mainConfigFileName = "config.yaml"
 )
 

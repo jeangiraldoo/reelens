@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
+	"os"
+	"reelens/appinfo"
 	"reelens/config"
 	"reelens/data"
 	_ "reelens/providers/all"
@@ -12,7 +12,8 @@ import (
 
 func NewRoot(cfg config.Config) (*cobra.Command, error) {
 	root := &cobra.Command{
-		Use:          "reelens",
+		Use:          appinfo.Name,
+		Version:      appinfo.Version(),
 		Short:        "Tracks package changes, commits and releases.",
 		Long:         "Tracks package changes, commits and releases so you don't have to do it yourself.",
 		SilenceUsage: true,

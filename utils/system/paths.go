@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reelens/appinfo"
 	"runtime"
 )
 
@@ -52,7 +53,7 @@ func UserStateDir() (string, error) {
 // Writes the file atomically: content is written to a temporary file beside
 // the real one, then renamed over it.
 func WriteFile(filePath string, data []byte) error {
-	tmp, err := os.CreateTemp(filepath.Dir(filePath), "reelens-*.tmp")
+	tmp, err := os.CreateTemp(filepath.Dir(filePath), appinfo.Name+"-*.tmp")
 	if err != nil {
 		return fmt.Errorf("cannot create temporary file: %w", err)
 	}

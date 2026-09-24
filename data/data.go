@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reelens/appinfo"
 	"reelens/utils/system"
 )
 
 const (
-	dirName     = "reelens"
+	dirName     = appinfo.Name
 	pkgDataFile = "packages.json"
 )
 
