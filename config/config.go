@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reelens/appinfo"
+	"reelens/utils/system"
 	"sort"
 )
 
@@ -55,12 +56,9 @@ func Load() (Config, error) {
 
 	mainConfigFilePath := filepath.Join(userConfigDir, configDirName, mainConfigFileName)
 
-	data, err := os.ReadFile(mainConfigFilePath)
+	data, err := system.ReadFile(mainConfigFilePath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return Config{}, nil // first run, no config yet
-		}
-		return Config{}, fmt.Errorf("cannot read the config file: %w", err)
+		return Config{}, fmt.Errorf("error reading config file: %w", err)
 	}
 
 	var cfg Config

@@ -38,11 +38,8 @@ func Init() error {
 func LoadPkgs() (LocalPkgs, error) {
 	pkgsData := make(LocalPkgs)
 
-	data, err := os.ReadFile(PkgDataFilePath)
+	data, err := system.ReadFile(PkgDataFilePath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return pkgsData, nil
-		}
 		return nil, fmt.Errorf("cannot read the release cache: %w", err)
 	}
 
