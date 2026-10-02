@@ -79,3 +79,18 @@ func WriteFile(filePath string, data []byte) error {
 
 	return nil
 }
+
+// ReadFile returns the file's contents. A missing file yields (nil, nil)
+// instead of an error: no file means no contents, which callers may treat as
+// an empty state. Any other read failure is returned as-is.
+func ReadFile(path string) ([]byte, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return data, nil
+}
