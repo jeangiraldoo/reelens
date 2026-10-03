@@ -1,8 +1,6 @@
 package data
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,51 +9,33 @@ import (
 )
 
 const (
-	dirName     = appinfo.Name
-	pkgDataFile = "packages.json"
+	dirName = appinfo.Name
+	dirPerm = 0o755
 )
 
-var PkgDataFilePath string
+func init() {
+	err := mkDataDir()
+	if err != nil {
+		fmt.Println(err)
+	}
+}
 
-// Init resolves the state directory, creates it if needed, and sets the
-// cache paths. It must be called before any command reads or writes the
-// cache.
-func Init() error {
+func getDataDirPath() (string, error) {
 	base, err := system.UserStateDir()
 
+	if err != nil {
+		return "", err
+	}
+
+	dataDirPath := filepath.Join(base, dirName)
+	return dataDirPath, nil
+}
+
+func mkDataDir() error {
+	dataDirPath, err := getDataDirPath()
 	if err != nil {
 		return err
 	}
 
-	dataDirPath := filepath.Join(base, dirName)
-	PkgDataFilePath = filepath.Join(dataDirPath, pkgDataFile)
-
-	const cacheDirPerm = 0o755
-
-	return os.MkdirAll(dataDirPath, cacheDirPerm)
-}
-
-func LoadPkgs() (LocalPkgs, error) {
-	pkgsData := make(LocalPkgs)
-
-	data, err := system.ReadFile(PkgDataFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read the release cache: %w", err)
-	}
-
-	// An empty file is equivalent to an empty cache.
-	if len(bytes.TrimSpace(data)) == 0 {
-		return pkgsData, nil
-	}
-
-	if err := json.Unmarshal(data, &pkgsData); err != nil {
-		return nil, fmt.Errorf("cannot parse the release cache: %w", err)
-	}
-
-	for pkgName, pkgData := range pkgsData {
-		pkgData.Name = pkgName
-		pkgsData[pkgName] = pkgData
-	}
-
-	return pkgsData, nil
+	return os.MkdirAll(dataDirPath, dirPerm)
 }

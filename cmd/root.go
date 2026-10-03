@@ -42,11 +42,6 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	if err := data.Init(); err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
 	command, err := NewRoot(cfg)
 	if err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
