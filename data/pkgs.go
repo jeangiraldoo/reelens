@@ -19,7 +19,6 @@ type Release struct {
 }
 
 func getPkgsFilePath() (string, error) {
-
 	dataDirPath, err := getDataDirPath()
 
 	if err != nil {
@@ -70,11 +69,7 @@ func (pkgs LocalPkgs) Save() error {
 		return err
 	}
 
-	pkgsFilePath, err := getPkgsFilePath()
-	if err != nil {
-		return err
-	}
-	return system.WriteFile(pkgsFilePath, data)
+	return mkFile(pkgsFileName, data)
 }
 
 // SetRelease replaces the in-memory entry for pkgName with the fetched release,

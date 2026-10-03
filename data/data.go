@@ -39,3 +39,13 @@ func mkDataDir() error {
 
 	return os.MkdirAll(dataDirPath, dirPerm)
 }
+
+func mkFile(relPath string, content []byte) error {
+	dataDirPath, err := getDataDirPath()
+	if err != nil {
+		return err
+	}
+
+	path := filepath.Join(dataDirPath, relPath)
+	return system.WriteFile(path, content)
+}
