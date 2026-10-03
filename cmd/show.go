@@ -5,7 +5,7 @@ import (
 	"github.com/charmbracelet/gum/pager"
 	"github.com/spf13/cobra"
 	"reelens/config"
-	"reelens/providers"
+	"reelens/data"
 )
 
 func showCmd(cfg config.Config) *cobra.Command {
@@ -20,15 +20,13 @@ The first argument selects what to show, for example a changelog:
 		Args: cobra.ExactArgs(2), //nolint:mnd
 		RunE: func(cmd *cobra.Command, args []string) error {
 			resource, pkgName := args[0], args[1]
-
-			pkg, err := cfg.GetPkg(pkgName)
-			if err != nil {
+			if _, err := cfg.GetPkg(pkgName); err != nil {
 				return err
 			}
 
 			switch resource {
 			case "changelog":
-				err := showChangelog(pkg, pkg.Changelog)
+				err := showChangelog(pkgName)
 				if err != nil {
 					return err
 				}
@@ -41,20 +39,8 @@ The first argument selects what to show, for example a changelog:
 	}
 }
 
-func showChangelog(pkg config.Pkg, changelogFileName string) error {
-	provider, err := providers.Lookup(pkg.Provider.Type)
-	if err != nil {
-		return err
-	}
-
-	cfg, err := providers.DecodeProviderConfig[struct {
-		RepoID string `yaml:"repoID"`
-	}](pkg)
-	if err != nil {
-		return err
-	}
-
-	changelog, err := provider.GetFile(cfg.RepoID, changelogFileName)
+func showChangelog(pkgName string) error {
+	changelog, err := data.Changelogs{}.Read(pkgName)
 	if err != nil {
 		return err
 	}

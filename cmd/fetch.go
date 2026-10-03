@@ -49,6 +49,15 @@ func fetchCmd(cfg config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 				}
 
 				pkgsData.SetRelease(pkgName, release)
+				if pkgConfig.Changelog != "" {
+					err = fetchChangelog(pkgConfig, pkgConfig.Changelog, pkgName)
+					if err != nil {
+						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "could not fetch the changelog for %s: %v\n", pkgName, err)
+						failed++
+						continue
+					}
+
+				}
 				fmt.Println("fetched " + pkgName)
 			}
 
@@ -65,4 +74,25 @@ func fetchCmd(cfg config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func fetchChangelog(pkg config.Pkg, changelogFileName, pkgName string) error {
+	provider, err := providers.Lookup(pkg.Provider.Type)
+	if err != nil {
+		return err
+	}
+
+	cfg, err := providers.DecodeProviderConfig[struct {
+		RepoID string `yaml:"repoID"`
+	}](pkg)
+	if err != nil {
+		return err
+	}
+
+	changelog, err := provider.GetFile(cfg.RepoID, changelogFileName)
+	if err != nil {
+		return err
+	}
+
+	return data.Changelogs{}.Write(pkgName, changelog)
 }
