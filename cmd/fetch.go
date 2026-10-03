@@ -14,7 +14,7 @@ import (
 // run are the actual report.
 var errFetchFailed = errors.New("fetch failed")
 
-func fetchCmd(cfg config.Config, pkgsData data.LocalPkgs) *cobra.Command {
+func fetchCmd(cfg config.Config, localPkgs data.LocalPkgs) *cobra.Command {
 	return &cobra.Command{
 		Use:   "fetch",
 		Short: "Updates the local cache for package data",
@@ -48,7 +48,7 @@ func fetchCmd(cfg config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 					continue
 				}
 
-				pkgsData.SetRelease(pkgName, release)
+				localPkgs.SetRelease(pkgName, release)
 				if pkgConfig.Changelog != "" {
 					err = fetchChangelog(pkgConfig, pkgConfig.Changelog, pkgName)
 					if err != nil {
@@ -61,7 +61,12 @@ func fetchCmd(cfg config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 				fmt.Println("fetched " + pkgName)
 			}
 
-			if err := pkgsData.Save(); err != nil {
+			lpkgs, err := data.NewLocalPkgs()
+			if err != nil {
+				return err
+			}
+
+			if err := lpkgs.Write(); err != nil {
 				return fmt.Errorf("could not save packages: %w", err)
 			}
 

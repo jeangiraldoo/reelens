@@ -7,7 +7,7 @@ import (
 	"reelens/data"
 )
 
-func setCmd(config config.Config, pkgsData data.LocalPkgs) *cobra.Command {
+func setCmd(config config.Config, localPkgs data.LocalPkgs) *cobra.Command {
 	return &cobra.Command{
 		Use:   "set <package> <version>",
 		Short: "Sets the installed version of a package",
@@ -24,12 +24,12 @@ Example:
 				return err
 			}
 
-			pkg := pkgsData[pkgName]
-
+			pkg := localPkgs.Pkgs[pkgName]
 			pkg.InstalledVersion = version
-			pkgsData[pkgName] = pkg
 
-			if err := pkgsData.Save(); err != nil {
+			localPkgs.Pkgs[pkgName] = pkg
+
+			if err := localPkgs.Write(); err != nil {
 				return fmt.Errorf("could not set %s: %w", pkgName, err)
 			}
 

@@ -3,7 +3,6 @@ package data
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"path/filepath"
@@ -18,53 +17,24 @@ type Release struct {
 	PublishedDate string `json:"publishedDate"`
 }
 
-func getPkgsFilePath() (string, error) {
-	dataDirPath, err := getDataDirPath()
-
-	if err != nil {
-		return "", err
-	}
-
-	path := filepath.Join(dataDirPath, pkgsFileName)
-	return path, nil
+type LocalPkgs struct {
+	Pkgs map[string]LocalPkg
 }
 
-// LocalPkgs holds every tracked package keyed by name.
-type LocalPkgs map[string]LocalPkg
-
-func LoadPkgs() (LocalPkgs, error) {
-	pkgsData := make(LocalPkgs)
-
-	pkgsFilePath, err := getPkgsFilePath()
+func NewLocalPkgs() (LocalPkgs, error) {
+	pkgs, err := readPkgs()
 	if err != nil {
-		return nil, err
+		return LocalPkgs{}, err
 	}
 
-	data, err := system.ReadFile(pkgsFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read the release cache: %w", err)
-	}
-
-	// An empty file is equivalent to an empty cache.
-	if len(bytes.TrimSpace(data)) == 0 {
-		return pkgsData, nil
-	}
-
-	if err := json.Unmarshal(data, &pkgsData); err != nil {
-		return nil, fmt.Errorf("cannot parse the release cache: %w", err)
-	}
-
-	for pkgName, pkgData := range pkgsData {
-		pkgData.Name = pkgName
-		pkgsData[pkgName] = pkgData
-	}
-
-	return pkgsData, nil
+	return LocalPkgs{
+		Pkgs: pkgs,
+	}, nil
 }
 
-// Save writes the full package collection back to disk.
-func (pkgs LocalPkgs) Save() error {
-	data, err := json.MarshalIndent(pkgs, "", "  ")
+// Write writes the full package collection back to disk.
+func (localPkgs LocalPkgs) Write() error {
+	data, err := json.MarshalIndent(localPkgs.Pkgs, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -75,12 +45,12 @@ func (pkgs LocalPkgs) Save() error {
 // SetRelease replaces the in-memory entry for pkgName with the fetched release,
 // restamping FetchedAt and preserving the installed version. It does not persist;
 // call Save to write the collection to disk.
-func (pkgs LocalPkgs) SetRelease(pkgName string, release Release) {
-	pkgs[pkgName] = LocalPkg{
+func (localPkgs LocalPkgs) SetRelease(pkgName string, release Release) {
+	localPkgs.Pkgs[pkgName] = LocalPkg{
 		Name:             pkgName,
 		Release:          release,
 		FetchedAt:        time.Now().Format(time.RFC3339),
-		InstalledVersion: pkgs[pkgName].InstalledVersion,
+		InstalledVersion: localPkgs.Pkgs[pkgName].InstalledVersion,
 	}
 }
 
@@ -101,23 +71,6 @@ type LocalPkg struct {
 	Name             string `json:"-"` // Set at runtime
 	FetchedAt        string `json:"fetchedAt"`
 	InstalledVersion string `json:"installedVersion"`
-}
-
-// Save loads the full collection, replaces this entry, and writes it back.
-// Prefer LocalPkgs.Save() when the caller already holds the loaded map.
-func (pkg LocalPkg) Save() error {
-	if pkg.Name == "" {
-		return errors.New("package name not set")
-	}
-
-	pkgs, err := LoadPkgs()
-	if err != nil {
-		return err
-	}
-
-	pkgs[pkg.Name] = pkg
-
-	return pkgs.Save()
 }
 
 // ResolveVersionStatus compares the installed version against the latest known
@@ -146,4 +99,45 @@ func (pkg LocalPkg) ResolveVersionStatus() ReleaseState {
 	default:
 		return Ahead
 	}
+}
+
+func readPkgs() (map[string]LocalPkg, error) {
+	pkgsData := make(map[string]LocalPkg)
+
+	pkgsFilePath, err := getPkgsFilePath()
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := system.ReadFile(pkgsFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read the release cache: %w", err)
+	}
+
+	// An empty file is equivalent to an empty cache.
+	if len(bytes.TrimSpace(data)) == 0 {
+		return pkgsData, nil
+	}
+
+	if err := json.Unmarshal(data, &pkgsData); err != nil {
+		return nil, fmt.Errorf("cannot parse the release cache: %w", err)
+	}
+
+	for pkgName, pkgData := range pkgsData {
+		pkgData.Name = pkgName
+		pkgsData[pkgName] = pkgData
+	}
+
+	return pkgsData, nil
+}
+
+func getPkgsFilePath() (string, error) {
+	dataDirPath, err := getDataDirPath()
+
+	if err != nil {
+		return "", err
+	}
+
+	path := filepath.Join(dataDirPath, pkgsFileName)
+	return path, nil
 }

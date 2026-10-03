@@ -61,7 +61,7 @@ func filterPkgs(pkgs []string, pkgsData data.LocalPkgs) []string {
 	}
 
 	return collections.Filter(pkgs, func(element string) bool {
-		status := pkgsData[element].ResolveVersionStatus()
+		status := pkgsData.Pkgs[element].ResolveVersionStatus()
 		for _, filter := range filters {
 			if filter(status) {
 				return true
@@ -108,7 +108,7 @@ func lsCmd(cfg config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 
 			versionWidth := 0
 			for _, pkgName := range pkgs {
-				currentVersion := pkgsData[pkgName].InstalledVersion
+				currentVersion := pkgsData.Pkgs[pkgName].InstalledVersion
 				if currentVersion == "" {
 					currentVersion = unknownLabel
 				}
@@ -118,7 +118,7 @@ func lsCmd(cfg config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 			}
 
 			for _, pkgName := range pkgs {
-				release := pkgsData[pkgName]
+				release := pkgsData.Pkgs[pkgName]
 				currentVersion := release.InstalledVersion
 
 				if currentVersion == "" {
@@ -141,13 +141,13 @@ func lsCmd(cfg config.Config, pkgsData data.LocalPkgs) *cobra.Command {
 	return lsCmd
 }
 
-func longOutput(pkgs []string, localPkgsData data.LocalPkgs) error {
+func longOutput(pkgs []string, localPkgs data.LocalPkgs) error {
 	table := tablewriter.NewWriter(os.Stdout)
 
 	table.Header("Package", "Installed version", "Latest version", "Outdated", "Published", "Last fetched")
 
 	for _, pkgName := range pkgs {
-		localPkgData := localPkgsData[pkgName]
+		localPkgData := localPkgs.Pkgs[pkgName]
 
 		row := []string{
 			pkgName,

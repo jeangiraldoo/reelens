@@ -19,14 +19,14 @@ func NewRoot(cfg config.Config) (*cobra.Command, error) {
 		SilenceUsage: true,
 	}
 
-	pkgsData, err := data.LoadPkgs()
+	localPkgs, err := data.NewLocalPkgs()
 	if err != nil {
 		return nil, fmt.Errorf("could not load packages: %w", err)
 	}
 
-	root.AddCommand(fetchCmd(cfg, pkgsData))
-	root.AddCommand(lsCmd(cfg, pkgsData))
-	root.AddCommand(setCmd(cfg, pkgsData))
+	root.AddCommand(fetchCmd(cfg, localPkgs))
+	root.AddCommand(lsCmd(cfg, localPkgs))
+	root.AddCommand(setCmd(cfg, localPkgs))
 	root.AddCommand(showCmd(cfg))
 
 	return root, nil
