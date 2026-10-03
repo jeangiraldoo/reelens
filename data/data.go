@@ -18,6 +18,11 @@ func init() {
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	err = mkChangelogsDir()
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func getDataDirPath() (string, error) {
