@@ -42,18 +42,6 @@ func (localPkgs LocalPkgs) Write() error {
 	return mkFile(pkgsFileName, data)
 }
 
-// SetRelease replaces the in-memory entry for pkgName with the fetched release,
-// restamping FetchedAt and preserving the installed version. It does not persist;
-// call Save to write the collection to disk.
-func (localPkgs LocalPkgs) SetRelease(pkgName string, release Release) {
-	localPkgs.Pkgs[pkgName] = LocalPkg{
-		Name:             pkgName,
-		Release:          release,
-		FetchedAt:        time.Now().Format(time.RFC3339),
-		InstalledVersion: localPkgs.Pkgs[pkgName].InstalledVersion,
-	}
-}
-
 // ReleaseState classifies where a package's installed version stands relative
 // to its latest known version.
 type ReleaseState int
@@ -73,19 +61,26 @@ type LocalPkg struct {
 	InstalledVersion string `json:"installedVersion"`
 }
 
+// SetRelease replaces the in-memory entry for the fetched release, restamping FetchedAt.
+// It does not persist; call Write on LocalPkgs to write the collection to disk.
+func (localPkg *LocalPkg) SetRelease(release Release) {
+	localPkg.FetchedAt = time.Now().Format(time.RFC3339)
+	localPkg.Release = release
+}
+
 // ResolveVersionStatus compares the installed version against the latest known
 // version and classifies the outcome. Non-semver values fall back to plain
 // string equality, since their relative order cannot be determined.
-func (pkg LocalPkg) ResolveVersionStatus() ReleaseState {
-	if pkg.InstalledVersion == "" {
+func (localPkg LocalPkg) ResolveVersionStatus() ReleaseState {
+	if localPkg.InstalledVersion == "" {
 		return Unknown
 	}
 
-	latest, latestErr := semver.NewVersion(pkg.LatestVersion)
-	installed, installedErr := semver.NewVersion(pkg.InstalledVersion)
+	latest, latestErr := semver.NewVersion(localPkg.LatestVersion)
+	installed, installedErr := semver.NewVersion(localPkg.InstalledVersion)
 
 	if latestErr != nil || installedErr != nil {
-		if pkg.InstalledVersion == pkg.LatestVersion {
+		if localPkg.InstalledVersion == localPkg.LatestVersion {
 			return Current
 		}
 		return Outdated

@@ -48,7 +48,10 @@ func fetchCmd(cfg config.Config, localPkgs data.LocalPkgs) *cobra.Command {
 					continue
 				}
 
-				localPkgs.SetRelease(pkgName, release)
+				pkg := localPkgs.Pkgs[pkgName]
+				pkg.SetRelease(release)
+				localPkgs.Pkgs[pkgName] = pkg
+
 				if pkgConfig.Changelog != "" {
 					err = fetchChangelog(pkgConfig, pkgConfig.Changelog, pkgName)
 					if err != nil {
@@ -61,12 +64,7 @@ func fetchCmd(cfg config.Config, localPkgs data.LocalPkgs) *cobra.Command {
 				fmt.Println("fetched " + pkgName)
 			}
 
-			lpkgs, err := data.NewLocalPkgs()
-			if err != nil {
-				return err
-			}
-
-			if err := lpkgs.Write(); err != nil {
+			if err := localPkgs.Write(); err != nil {
 				return fmt.Errorf("could not save packages: %w", err)
 			}
 
