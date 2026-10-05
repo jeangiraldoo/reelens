@@ -113,10 +113,11 @@ name, and package options are defined under it.
 
 The following options are available for all packages:
 
-| Name       | Expected type    | Description                                     |
-| ---------- | ---------------- | ----------------------------------------------- |
-| `provider` | `string`         | Provider used to retrieve package data          |
-| `version`  | `release \| tag` | Determines how the package version is obtained. |
+| Name        | Expected type    | Description                                                          |
+| ----------- | ---------------- | -------------------------------------------------------------------- |
+| `provider`  | `string`         | Provider used to retrieve package data                               |
+| `version`   | `release \| tag` | Determines how the package version is obtained.                      |
+| `changelog` | `string`         | Absolute file path to the changelog file in the package's repository |
 
 ##### Providers
 
